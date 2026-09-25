@@ -21,7 +21,7 @@ export function renderMermaidSvg(source: string, theme: "default" | "dark" | "ne
   // Mermaid keeps global render state, so diagrams render one at a time.
   const task = queue.catch(() => undefined).then(async () => {
     const mermaid = await loadMermaid() as HostMermaid;
-    const id = `qa-mermaid-${crypto.randomUUID()}`;
+    const id = `qp-mermaid-${crypto.randomUUID()}`;
     try {
       const { svg } = await mermaid.render(id, withTheme(source, theme));
       if (!svg || /class="error-icon"/.test(svg)) throw new Error("Mermaid 语法无法解析");

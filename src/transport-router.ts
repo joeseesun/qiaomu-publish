@@ -1,5 +1,5 @@
 import type { App } from "obsidian";
-import type { WechatPublishSettings } from "../types";
+import type { WechatPublishSettings } from "./types";
 import { WechatBridgeClient, type WechatAccount, type WechatDraftRequest, type WechatDraftResult } from "./bridge-client";
 import { WechatDirectClient } from "./direct-client";
 import { WechatRelayClient } from "./relay-client";

@@ -1,5 +1,5 @@
 import { loadMathJax } from "obsidian";
-import { renderMermaidSvg, sizeSvg } from "../services/host-mermaid";
+import { renderMermaidSvg, sizeSvg } from "./host-mermaid";
 
 export interface RasterImage {
   blob: Blob;

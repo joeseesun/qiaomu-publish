@@ -1,5 +1,5 @@
 import { ItemView, MarkdownView, Menu, TFile, type WorkspaceLeaf } from "obsidian";
-import type QiaomuAgentPlugin from "../main";
+import type QiaomuPublishPlugin from "./main";
 import { buildWechatHtml, listWechatThemes, resolveWechatTheme } from "./export-html";
 import { renderNoteForWechat, type RenderedNote } from "./render-note";
 import { copyWechatHtml } from "./copy-html";
@@ -24,14 +24,13 @@ export class WechatPreviewView extends ItemView {
   private pendingSourceTop = -1;
   private pendingPreviewTop = -1;
 
-  constructor(leaf: WorkspaceLeaf, private readonly plugin: QiaomuAgentPlugin) { super(leaf); }
+  constructor(leaf: WorkspaceLeaf, private readonly plugin: QiaomuPublishPlugin) { super(leaf); }
   getViewType(): string { return WECHAT_PREVIEW_VIEW; }
   getDisplayText(): string { return "公众号预览"; }
   override getIcon(): string { return "smartphone"; }
 
   override async onOpen(): Promise<void> {
     const root = this.contentEl.createDiv({ cls: "qiaomu-wechat-live-preview" });
-    this.addAction("sparkles", "返回乔木 Agent", () => void this.plugin.activateView());
     this.addAction("sliders-horizontal", "预览选项", (event) => this.openOptions(event));
     this.addAction("copy", "复制公众号格式", () => void this.copy());
     this.addAction("send", "打开草稿发布", () => { if (this.file) this.plugin.openWechatPublish(this.file); });

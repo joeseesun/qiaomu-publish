@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from "vitest";
 import { setRequestUrlHandler } from "./obsidian-stub";
-import { WechatDirectClient } from "../src/wechat/direct-client";
-import { WechatTransportRouter } from "../src/wechat/transport-router";
+import { WechatDirectClient } from "../src/direct-client";
+import { WechatTransportRouter } from "../src/transport-router";
 import type { WechatPublishSettings } from "../src/types";
 
 afterEach(() => setRequestUrlHandler(async () => { throw new Error("unexpected request"); }));

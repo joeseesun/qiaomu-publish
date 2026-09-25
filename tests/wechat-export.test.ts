@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import { inlineCss, parseDeclarations, selectorSpecificity, splitTopLevel } from "../src/wechat/inline-css";
-import { prepareMarkdown, stripFrontmatter } from "../src/wechat/markdown-prep";
-import { cleanObsidianDom, replaceTokens } from "../src/wechat/obsidian-dom";
-import { buildWechatHtml, finalizeWechatImages, resolveWechatTheme } from "../src/wechat/export-html";
-import { imageMime, metaFromFrontmatter, preflight } from "../src/wechat/publisher";
+import { inlineCss, parseDeclarations, selectorSpecificity, splitTopLevel } from "../src/inline-css";
+import { prepareMarkdown, stripFrontmatter } from "../src/markdown-prep";
+import { cleanObsidianDom, replaceTokens } from "../src/obsidian-dom";
+import { buildWechatHtml, finalizeWechatImages, resolveWechatTheme } from "../src/export-html";
+import { imageMime, metaFromFrontmatter, preflight } from "../src/publisher";
 
 function fragment(html: string): HTMLElement {
   const doc = new DOMParser().parseFromString(`<div id="root">${html}</div>`, "text/html");

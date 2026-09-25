@@ -1,5 +1,5 @@
 import { type App, Component, Modal, Notice, setIcon, Setting, type TFile } from "obsidian";
-import type { WechatPublishSettings } from "../types";
+import type { WechatPublishSettings } from "./types";
 import type { WechatAccount } from "./bridge-client";
 import { WechatTransportRouter } from "./transport-router";
 import { buildWechatHtml, listWechatThemes, resolveWechatTheme } from "./export-html";
@@ -154,7 +154,7 @@ export class WechatPublishModal extends Modal {
     if (!this.note || !this.meta) return;
     const hasCover = Boolean(resolveCover(this.app, this.file.path, this.meta, this.note.images));
     const checks = preflight(this.meta, this.wechatHtml, hasCover, this.note.warnings);
-    if (this.clientError) checks.unshift({ level: "error", message: this.clientError, fix: "在 设置 → 乔木 Agent → 发布 中连接公众号；也可以先复制公众号格式。" });
+    if (this.clientError) checks.unshift({ level: "error", message: this.clientError, fix: "在 设置 → Qiaomu Publish 中连接公众号；也可以先复制公众号格式。" });
     this.checksEl.empty();
     for (const check of checks) {
       const item = this.checksEl.createEl("li", { cls: `is-${check.level}` });
