@@ -7,7 +7,7 @@ import { type DraftMeta, metaFromFrontmatter, preflight, publishDraft, recordDra
 import { renderNoteForWechat, type ArticleImage, type RenderedNote } from "./render-note";
 import { copyWechatHtml } from "./copy-html";
 import { WechatDirectClient } from "./direct-client";
-import { WechatRelayClient, relayEgressIps } from "./relay-client";
+import { WechatRelayClient, knownRelayEgressIps, relayEgressIps } from "./relay-client";
 import type QiaomuPublishPlugin from "./main";
 import { QIAOMU_RELAY_CODE, QIAOMU_RELAY_URL } from "./defaults";
 
@@ -226,10 +226,16 @@ export class WechatPublishModal extends Modal {
     const relayFields = panel.createDiv();
     relayFields.createEl("p", { text: "通过乔木服务器访问微信；AppSecret 只在请求期间经 HTTPS 传输，不保存在中转服务器。" });
     new Setting(relayFields).setName("乔木中转地址").setDesc("填 HTTPS 地址；公众号后台的 API 白名单要填下方显示的固定公网 IP。")
-      .addText((text) => text.setValue(QIAOMU_RELAY_URL).onChange((value) => { input.relayUrl = value.trim(); }));
-    const ipButton = relayFields.createEl("button", { text: "查看白名单 IP" });
+      .addText((text) => text.setValue(QIAOMU_RELAY_URL).onChange((value) => { input.relayUrl = value.trim(); showIps(knownRelayEgressIps(input.relayUrl)); }));
+    const ipButton = relayFields.createEl("button", { text: "刷新白名单 IP" });
     const ipStatus = relayFields.createDiv({ cls: "qiaomu-wechat-connect-status" });
     ipStatus.setAttribute("role", "status");
+    const showIps = (ips: string[]) => {
+      ipStatus.empty();
+      ipStatus.createSpan({ text: `在公众号后台的 API IP 白名单加入：${ips.join("、") || "中转未配置固定出口 IP"} ` });
+      if (ips.length) ipStatus.createEl("button", { text: "复制 IP" }).addEventListener("click", () => void navigator.clipboard.writeText(ips.join("\n")).then(() => ipStatus.setText(`已复制 ${ips.join("、")}，请粘贴到公众号后台 API IP 白名单。`)).catch(() => ipStatus.setText(`复制失败，请手动复制：${ips.join("、")}`)));
+    };
+    showIps(knownRelayEgressIps(input.relayUrl));
     new Setting(panel).setName("AppID").addText((text) => text.setPlaceholder("在公众号后台获取").onChange((value) => { input.appId = value.trim(); }));
     new Setting(panel).setName("AppSecret").addText((text) => {
       text.inputEl.type = "password";
@@ -245,9 +251,7 @@ export class WechatPublishModal extends Modal {
       ipButton.disabled = true;
       try {
         const ips = await relayEgressIps(input.relayUrl);
-        ipStatus.empty();
-        ipStatus.createSpan({ text: `在公众号后台的 API IP 白名单加入：${ips.join("、") || "中转未配置固定出口 IP"} ` });
-        if (ips.length) ipStatus.createEl("button", { text: "复制 IP" }).addEventListener("click", () => void navigator.clipboard.writeText(ips.join("\n")).then(() => ipStatus.setText(`已复制 ${ips.join("、")}，请粘贴到公众号后台 API IP 白名单。`)).catch(() => ipStatus.setText(`复制失败，请手动复制：${ips.join("、")}`)));
+        showIps(ips);
       } catch (error) { ipStatus.setText(`读取失败：${error instanceof Error ? error.message : String(error)}`); }
       finally { ipButton.disabled = false; }
     })());

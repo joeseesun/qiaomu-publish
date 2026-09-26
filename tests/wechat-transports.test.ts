@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { setRequestUrlHandler } from "./obsidian-stub";
 import { WechatDirectClient } from "../src/direct-client";
 import { WechatTransportRouter } from "../src/transport-router";
-import { WechatRelayClient } from "../src/relay-client";
+import { WechatRelayClient, knownRelayEgressIps, relayEgressIps } from "../src/relay-client";
 import type { WechatPublishSettings } from "../src/types";
 
 afterEach(() => setRequestUrlHandler(async () => { throw new Error("unexpected request"); }));
@@ -74,6 +74,12 @@ describe("mixed account routing", () => {
 });
 
 describe("invited relay", () => {
+  it("shows Qiaomu's verified whitelist IP when the public endpoint returns 401", async () => {
+    setRequestUrlHandler(async () => ({ status: 401, json: { error: "Relay authentication failed" } }));
+    expect(knownRelayEgressIps("https://wx.qiaomu.ai/")).toEqual(["207.148.115.69"]);
+    expect(await relayEgressIps("https://wx.qiaomu.ai")).toEqual(["207.148.115.69"]);
+    await expect(relayEgressIps("https://another-relay.example")).rejects.toThrow("HTTP 401");
+  });
   it("uses the shared qiaomu code for new relay connections without a stored invitation", async () => {
     let auth = "";
     setRequestUrlHandler(async (options) => {

@@ -1,6 +1,7 @@
 import type { QiaomuPublishSettings, WechatPublishSettings } from "./types";
 
 export const QIAOMU_RELAY_URL = "https://wx.qiaomu.ai";
+export const QIAOMU_RELAY_EGRESS_IP = "207.148.115.69";
 export const QIAOMU_RELAY_CODE = "qiaomu";
 
 export const DEFAULT_SETTINGS: QiaomuPublishSettings = {

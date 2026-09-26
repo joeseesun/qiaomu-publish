@@ -1,11 +1,27 @@
 import { requestUrl, type RequestUrlParam } from "obsidian";
 import { normalizeBridgeUrl, type WechatAccount, type WechatDraftRequest, type WechatDraftResult } from "./bridge-client";
 import type { WechatTransport } from "./transport";
+import { QIAOMU_RELAY_EGRESS_IP, QIAOMU_RELAY_URL } from "./defaults";
+
+export function knownRelayEgressIps(relayUrl: string): string[] {
+  try { return normalizeBridgeUrl(relayUrl) === QIAOMU_RELAY_URL ? [QIAOMU_RELAY_EGRESS_IP] : []; }
+  catch { return []; }
+}
 
 export async function relayEgressIps(relayUrl: string): Promise<string[]> {
   const baseUrl = normalizeBridgeUrl(relayUrl);
   if (!baseUrl) throw new Error("请填写中转地址");
-  const response = await requestUrl({ url: `${baseUrl}/v2/egress-ip`, throw: false });
+  let response;
+  try { response = await requestUrl({ url: `${baseUrl}/v2/egress-ip`, throw: false }); }
+  catch (error) {
+    const known = knownRelayEgressIps(baseUrl);
+    if (known.length) return known;
+    throw error;
+  }
+  if (response.status !== 200) {
+    const known = knownRelayEgressIps(baseUrl);
+    if (known.length) return known;
+  }
   if (response.status === 503) throw new Error("乔木中转尚未开放，请稍后再试");
   if (response.status !== 200) throw new Error(`无法读取中转出口 IP（HTTP ${response.status}）`);
   const payload = response.json as { ips?: unknown };

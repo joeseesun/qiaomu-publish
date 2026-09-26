@@ -1,7 +1,7 @@
 import { type App, PluginSettingTab, Setting } from "obsidian";
 import type QiaomuPublishPlugin from "./main";
 import { WechatDirectClient } from "./direct-client";
-import { WechatRelayClient, relayEgressIps } from "./relay-client";
+import { WechatRelayClient, knownRelayEgressIps, relayEgressIps } from "./relay-client";
 import { WechatTransportRouter } from "./transport-router";
 import { listWechatThemes } from "./export-html";
 import { QIAOMU_RELAY_CODE, QIAOMU_RELAY_URL } from "./defaults";
@@ -135,10 +135,14 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
       if (connection.mode === "relay") {
         new Setting(group).setName("中转地址").setDesc("必须使用 HTTPS；仅本机调试允许 localhost。")
           .addText((input) => input.setPlaceholder("https://").setValue(connection.relayUrl ?? "").onChange(async (value) => {
-            connection.relayUrl = value.trim(); await this.plugin.saveSettings();
+            connection.relayUrl = value.trim();
+            const ips = knownRelayEgressIps(connection.relayUrl);
+            status.setDesc(ips.length ? `公众号 API IP 白名单：${ips.join("、")}。测试连接不会创建草稿。` : "测试时会调用微信只读接口，不会创建草稿。");
+            await this.plugin.saveSettings();
           }));
       }
-      const status = new Setting(group).setName("连接状态").setDesc("测试时会调用微信只读接口，不会创建草稿。");
+      const knownIps = connection.mode === "relay" ? knownRelayEgressIps(connection.relayUrl ?? "") : [];
+      const status = new Setting(group).setName("连接状态").setDesc(knownIps.length ? `公众号 API IP 白名单：${knownIps.join("、")}。测试连接不会创建草稿。` : "测试时会调用微信只读接口，不会创建草稿。");
       if (connection.mode === "relay") status.addButton((button) => button.setButtonText("查看白名单 IP").onClick(async () => {
         button.setDisabled(true);
         try {
