@@ -15,6 +15,8 @@ function wxError(payload: WxPayload, fallback: string): Error {
     return new Error(ip ? `微信拒绝当前出口 IP ${ip}。请在公众号后台把该 IP 加入 API 白名单。` : "微信拒绝当前出口 IP。请在公众号后台查看 API 白名单，并确认当前网络的出口 IP。");
   }
   if (code === 40013 || code === 40125) return new Error("公众号 AppID 或 AppSecret 无效，请检查后重试。");
+  if (code === 48001) return new Error("此公众号没有调用该微信接口的权限，请在公众号后台检查接口权限。");
+  if (code === 45009) return new Error("微信接口调用次数已达上限，请稍后重试。");
   return new Error(`${fallback}${code !== undefined ? `（微信错误码 ${code}）` : ""}`);
 }
 
@@ -121,7 +123,7 @@ export class WechatDirectClient implements WechatTransport {
     return this.uploadImage(this.account.id, kind, parsed.pathname.split("/").pop() || "image.jpg", type, response.arrayBuffer);
   }
 
-  async createDraft(body: WechatDraftRequest): Promise<WechatDraftResult> {
+  private async draftArticle(body: WechatDraftRequest): Promise<Record<string, unknown>> {
     if (body.account_id !== this.account.id) throw new Error("公众号不匹配");
     if (body.publish_now !== false) throw new Error("只允许创建草稿");
     const doc = new DOMParser().parseFromString(body.content_html, "text/html");
@@ -135,8 +137,25 @@ export class WechatDirectClient implements WechatTransport {
     let coverId = body.thumb_media_id;
     if (!coverId && body.cover_image_url) coverId = (await this.uploadRemote(body.cover_image_url, "cover")).media_id;
     if (!coverId) throw new Error("请为草稿添加封面");
-    const payload = await this.call("/cgi-bin/draft/add", "POST", JSON.stringify({ articles: [{ title: body.title, author: body.author ?? "", digest: body.digest ?? "", content: doc.body.innerHTML, content_source_url: body.content_source_url ?? "", thumb_media_id: coverId, need_open_comment: body.need_open_comment ? 1 : 0, only_fans_can_comment: 0 }] }), "application/json");
+    return { title: body.title, author: body.author ?? "", digest: body.digest ?? "", content: doc.body.innerHTML, content_source_url: body.content_source_url ?? "", thumb_media_id: coverId, need_open_comment: body.need_open_comment ? 1 : 0, only_fans_can_comment: 0 };
+  }
+
+  async createDraft(body: WechatDraftRequest): Promise<WechatDraftResult> {
+    const article = await this.draftArticle(body);
+    const payload = await this.call("/cgi-bin/draft/add", "POST", JSON.stringify({ articles: [article] }), "application/json");
     if (!payload.media_id) throw new Error("微信没有返回草稿 ID");
     return { media_id: payload.media_id, account: this.account };
+  }
+
+  async getDraft(accountId: string, mediaId: string): Promise<{ title: string }> {
+    if (accountId !== this.account.id) throw new Error("公众号不匹配");
+    const payload = await this.call("/cgi-bin/draft/get", "POST", JSON.stringify({ media_id: mediaId }), "application/json") as WxPayload & { news_item?: Array<{ title?: string }> };
+    return { title: payload.news_item?.[0]?.title ?? "" };
+  }
+
+  async updateDraft(mediaId: string, body: WechatDraftRequest): Promise<WechatDraftResult> {
+    const article = await this.draftArticle(body);
+    await this.call("/cgi-bin/draft/update", "POST", JSON.stringify({ media_id: mediaId, index: 0, articles: article }), "application/json");
+    return { media_id: mediaId, account: this.account };
   }
 }

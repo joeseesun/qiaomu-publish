@@ -53,7 +53,7 @@ export default class QiaomuPublishPlugin extends Plugin {
   }
 
   openWechatPublish(file: TFile): void {
-    new WechatPublishModal(this.app, file, this.settings.wechat).open();
+    new WechatPublishModal(this.app, file, this).open();
   }
 
   async openWechatPreview(file: TFile): Promise<void> {

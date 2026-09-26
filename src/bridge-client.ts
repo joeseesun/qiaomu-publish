@@ -77,4 +77,12 @@ export class WechatBridgeClient {
     if (!result?.media_id) throw new Error("Bridge 没有返回草稿 media_id");
     return result;
   }
+
+  async getDraft(_accountId: string, _mediaId: string): Promise<{ title: string }> {
+    throw new Error("当前自建 Bridge 尚不支持更新草稿，请选择新建草稿");
+  }
+
+  async updateDraft(_mediaId: string, _body: WechatDraftRequest): Promise<WechatDraftResult> {
+    throw new Error("当前自建 Bridge 尚不支持更新草稿，请选择新建草稿");
+  }
 }

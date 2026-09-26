@@ -1,5 +1,7 @@
 import type { QiaomuPublishSettings, WechatPublishSettings } from "./types";
 
+export const QIAOMU_RELAY_URL = "https://wx.qiaomu.ai";
+
 export const DEFAULT_SETTINGS: QiaomuPublishSettings = {
   schemaVersion: 1,
   wechat: {

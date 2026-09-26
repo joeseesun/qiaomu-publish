@@ -48,6 +48,12 @@ export class WechatTransportRouter implements WechatTransport {
     return client;
   }
 
+  canUpdateDraft(accountId: string): boolean { return !(this.client(accountId) instanceof WechatBridgeClient); }
+
+  getDraft(accountId: string, mediaId: string): Promise<{ title: string }> { return this.client(accountId).getDraft(accountId, mediaId); }
+
+  updateDraft(mediaId: string, body: WechatDraftRequest): Promise<WechatDraftResult> { return this.client(body.account_id).updateDraft(mediaId, body); }
+
   uploadImage(accountId: string, kind: "content" | "cover", fileName: string, contentType: string, data: ArrayBuffer): Promise<{ url?: string; media_id?: string }> {
     return this.client(accountId).uploadImage(accountId, kind, fileName, contentType, data);
   }

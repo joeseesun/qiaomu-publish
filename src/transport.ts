@@ -5,4 +5,6 @@ export interface WechatTransport {
   listAccounts(): Promise<WechatAccount[]>;
   uploadImage(accountId: string, kind: "content" | "cover", fileName: string, contentType: string, data: ArrayBuffer): Promise<{ url?: string; media_id?: string }>;
   createDraft(body: WechatDraftRequest): Promise<WechatDraftResult>;
+  getDraft(accountId: string, mediaId: string): Promise<{ title: string }>;
+  updateDraft(mediaId: string, body: WechatDraftRequest): Promise<WechatDraftResult>;
 }

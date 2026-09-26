@@ -1,9 +1,10 @@
 import { type App, PluginSettingTab, Setting } from "obsidian";
 import type QiaomuPublishPlugin from "./main";
 import { WechatDirectClient } from "./direct-client";
-import { WechatRelayClient } from "./relay-client";
+import { WechatRelayClient, relayEgressIps } from "./relay-client";
 import { WechatTransportRouter } from "./transport-router";
 import { listWechatThemes } from "./export-html";
+import { QIAOMU_RELAY_URL } from "./defaults";
 
 export class QiaomuPublishSettingTab extends PluginSettingTab {
   constructor(app: App, private readonly plugin: QiaomuPublishPlugin) { super(app, plugin); }
@@ -112,7 +113,7 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
       }))
       .addButton((button) => button.setButtonText("乔木中转").onClick(async () => {
         const id = `relay:${crypto.randomUUID()}`;
-        wechat.connections.push({ id, name: "新公众号", mode: "relay", appId: "", appSecretId: `qiaomu-wechat-secret-${id}`, inviteSecretId: `qiaomu-wechat-invite-${id}`, relayUrl: "" });
+        wechat.connections.push({ id, name: "新公众号", mode: "relay", appId: "", appSecretId: `qiaomu-wechat-secret-${id}`, inviteSecretId: `qiaomu-wechat-invite-${id}`, relayUrl: QIAOMU_RELAY_URL });
         wechat.defaultAccountId = id;
         await this.plugin.saveSettings(); this.display();
       }));
@@ -144,6 +145,14 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
           });
       }
       const status = new Setting(group).setName("连接状态").setDesc("测试时会调用微信只读接口，不会创建草稿。");
+      if (connection.mode === "relay") status.addButton((button) => button.setButtonText("查看白名单 IP").onClick(async () => {
+        button.setDisabled(true);
+        try {
+          const ips = await relayEgressIps(connection.relayUrl ?? "");
+          status.setDesc(ips.length ? `在公众号后台把 ${ips.join("、")} 加入 API IP 白名单。` : "中转尚未配置固定出口 IP。");
+        } catch (error) { status.setDesc(`读取失败：${error instanceof Error ? error.message : String(error)}`); }
+        finally { button.setDisabled(false); }
+      }));
       status.addButton((button) => button.setButtonText("测试连接").onClick(async () => {
         button.setDisabled(true);
         try {
@@ -154,7 +163,7 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
             status.setDesc("连接成功。当前设备出口 IP 已获微信接受。");
           } else {
             const ips = await new WechatRelayClient(account, connection.appId, secret, this.app.secretStorage.getSecret(connection.inviteSecretId ?? "") ?? "", connection.relayUrl ?? "").testConnection();
-            status.setDesc(ips.length ? `中转可用。请将 ${ips.join("、")} 加入公众号 API 白名单。` : "中转可用；请向管理员确认固定出口 IP。 ");
+            status.setDesc(ips.length ? `连接成功。微信已接受中转出口 IP ${ips.join("、")}。` : "连接成功，但中转未返回固定出口 IP。");
           }
         } catch (error) { status.setDesc(`连接失败：${error instanceof Error ? error.message : String(error)}`); }
         finally { button.setDisabled(false); }
