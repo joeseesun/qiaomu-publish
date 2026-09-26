@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { setRequestUrlHandler } from "./obsidian-stub";
 import { WechatDirectClient } from "../src/direct-client";
 import { WechatTransportRouter } from "../src/transport-router";
+import { WechatRelayClient, knownRelayEgressIps, relayEgressIps } from "../src/relay-client";
 import type { WechatPublishSettings } from "../src/types";
 
 afterEach(() => setRequestUrlHandler(async () => { throw new Error("unexpected request"); }));
@@ -38,6 +39,24 @@ describe("WeChat direct transport", () => {
         .rejects.toThrow("正文图片必须使用公网 HTTPS");
     }
   });
+
+  it("checks and updates the recorded draft without calling draft/add", async () => {
+    const calls: Array<{ url: string; body?: string }> = [];
+    setRequestUrlHandler(async (options) => {
+      const url = String(options.url);
+      calls.push({ url, body: typeof options.body === "string" ? options.body : undefined });
+      if (url.endsWith("/stable_token")) return { status: 200, json: { access_token: "token", expires_in: 7200 } };
+      if (url.includes("/draft/get")) return { status: 200, json: { news_item: [{ title: "旧标题" }] } };
+      if (url.includes("/draft/update")) return { status: 200, json: { errcode: 0 } };
+      throw new Error("unexpected request");
+    });
+    const client = new WechatDirectClient({ id: "direct:1", name: "测试号" }, "wx-test", "secret");
+    expect(await client.getDraft("direct:1", "draft-1")).toEqual({ title: "旧标题" });
+    expect((await client.updateDraft("draft-1", { account_id: "direct:1", title: "新标题", content_html: "<p>正文</p>", thumb_media_id: "cover", publish_now: false })).media_id).toBe("draft-1");
+    expect(calls.some(({ url }) => url.includes("/draft/add"))).toBe(false);
+    const update = calls.find(({ url }) => url.includes("/draft/update"));
+    expect(JSON.parse(update?.body ?? "{}")).toMatchObject({ media_id: "draft-1", index: 0, articles: { title: "新标题" } });
+  });
 });
 
 describe("mixed account routing", () => {
@@ -51,5 +70,55 @@ describe("mixed account routing", () => {
     const router = new WechatTransportRouter(app, settings);
     expect(await router.listAccounts()).toEqual([{ id: "old", name: "原有账号" }, { id: "direct:new", name: "新账号" }]);
     expect(router.errors).toEqual([]);
+  });
+});
+
+describe("invited relay", () => {
+  it("shows Qiaomu's verified whitelist IP when the public endpoint returns 401", async () => {
+    setRequestUrlHandler(async () => ({ status: 401, json: { error: "Relay authentication failed" } }));
+    expect(knownRelayEgressIps("https://wx.qiaomu.ai/")).toEqual(["207.148.115.69"]);
+    expect(await relayEgressIps("https://wx.qiaomu.ai")).toEqual(["207.148.115.69"]);
+    await expect(relayEgressIps("https://another-relay.example")).rejects.toThrow("HTTP 401");
+  });
+  it("uses the shared qiaomu code for new relay connections without a stored invitation", async () => {
+    let auth = "";
+    setRequestUrlHandler(async (options) => {
+      if (String(options.url).endsWith("/v2/egress-ip")) return { status: 200, json: { ips: ["8.8.8.8"] } };
+      auth = String((options.headers as Record<string, string> | undefined)?.Authorization ?? "");
+      return { status: 200, json: { ok: true } };
+    });
+    const settings: WechatPublishSettings = { bridgeUrl: "", secretId: "", defaultAccountId: "relay:1", themeId: "qiaomu-podcast", author: "", openComment: true, recordInNote: true, connections: [{ id: "relay:1", name: "我的号", mode: "relay", appId: "wx-test", appSecretId: "app-secret", relayUrl: "https://relay.example.com" }] };
+    const app = { secretStorage: { getSecret: (id: string) => id === "app-secret" ? "secret-value" : "" } } as never;
+    const router = new WechatTransportRouter(app, settings);
+    await router.listAccounts();
+    await router.getDraft("relay:1", "draft-1");
+    expect(auth).toBe("Bearer qiaomu");
+  });
+
+  it("distinguishes a short burst limit from the daily quota", async () => {
+    setRequestUrlHandler(async () => ({ status: 429, json: { error: "中转请求过于频繁，请稍后再试" } }));
+    const client = new WechatRelayClient({ id: "relay:1", name: "我的号" }, "wx-test", "secret-value", "qiaomu", "https://relay.example.com");
+    await expect(client.getDraft("relay:1", "draft-1")).rejects.toThrow("请求过于频繁");
+  });
+  it("shows the fixed egress IP before checking WeChat and updates a known draft", async () => {
+    const paths: string[] = [];
+    let egressHeaders: unknown;
+    setRequestUrlHandler(async (options) => {
+      const url = String(options.url);
+      paths.push(new URL(url).pathname);
+      if (url.endsWith("/v2/egress-ip")) { egressHeaders = options.headers; return { status: 200, json: { ips: ["8.8.8.8"] } }; }
+      if (url.endsWith("/v2/wechat/check")) return { status: 200, json: { ok: true } };
+      if (url.endsWith("/v2/wechat/draft/get")) return { status: 200, json: { title: "旧标题" } };
+      if (url.endsWith("/v2/wechat/draft")) return { status: 200, json: { media_id: "draft-1" } };
+      throw new Error("unexpected request");
+    });
+    const client = new WechatRelayClient({ id: "relay:1", name: "我的号" }, "wx-test", "app-secret", "invite", "https://relay.example.com");
+    expect(await client.getEgressIps()).toEqual(["8.8.8.8"]);
+    expect(paths).toEqual(["/v2/egress-ip"]);
+    expect(egressHeaders).toBeUndefined();
+    expect(await client.testConnection()).toEqual(["8.8.8.8"]);
+    expect(await client.getDraft("relay:1", "draft-1")).toEqual({ title: "旧标题" });
+    expect((await client.updateDraft("draft-1", { account_id: "relay:1", title: "新标题", content_html: "<p>正文</p>", thumb_media_id: "cover", publish_now: false })).media_id).toBe("draft-1");
+    expect(paths).not.toContain("/cgi-bin/freepublish/submit");
   });
 });

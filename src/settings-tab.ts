@@ -1,9 +1,10 @@
 import { type App, PluginSettingTab, Setting } from "obsidian";
 import type QiaomuPublishPlugin from "./main";
 import { WechatDirectClient } from "./direct-client";
-import { WechatRelayClient } from "./relay-client";
+import { WechatRelayClient, knownRelayEgressIps, relayEgressIps } from "./relay-client";
 import { WechatTransportRouter } from "./transport-router";
 import { listWechatThemes } from "./export-html";
+import { QIAOMU_RELAY_CODE, QIAOMU_RELAY_URL } from "./defaults";
 
 export class QiaomuPublishSettingTab extends PluginSettingTab {
   constructor(app: App, private readonly plugin: QiaomuPublishPlugin) { super(app, plugin); }
@@ -26,7 +27,7 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
     ] as const) {
       new Setting(containerEl).setName(name).controlEl.createEl("a", { text: label, href, attr: { target: "_blank", rel: "noopener noreferrer" } });
     }
-    new Setting(containerEl).setName("隐私").setDesc("只有你主动发送草稿时，正文与图片才会发给你选择的连接。AppSecret、邀请密钥和 Bridge 令牌保存在本机 SecretStorage，不写入同步的插件数据。");
+    new Setting(containerEl).setName("隐私").setDesc("只有你主动发送草稿时，正文与图片才会发给你选择的连接。AppSecret 和 Bridge 令牌保存在本机 SecretStorage，不写入同步的插件数据。乔木共享接入码随插件公开，不是私密凭据。");
   }
 
   private renderPublishSection(containerEl: HTMLElement): void {
@@ -103,7 +104,7 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
 
   private renderWechatConnections(containerEl: HTMLElement): void {
     const wechat = this.plugin.settings.wechat;
-    new Setting(containerEl).setName("添加公众号连接").setDesc("直连需要当前设备出口 IP 在公众号白名单；乔木中转需要邀请密钥和中转服务器的固定出口 IP。")
+    new Setting(containerEl).setName("添加公众号连接").setDesc("直连需要当前设备出口 IP 在公众号白名单；乔木中转需要把服务器的固定出口 IP 加入白名单。")
       .addButton((button) => button.setButtonText("直连微信").onClick(async () => {
         const id = `direct:${crypto.randomUUID()}`;
         wechat.connections.push({ id, name: "新公众号", mode: "direct", appId: "", appSecretId: `qiaomu-wechat-secret-${id}` });
@@ -112,7 +113,7 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
       }))
       .addButton((button) => button.setButtonText("乔木中转").onClick(async () => {
         const id = `relay:${crypto.randomUUID()}`;
-        wechat.connections.push({ id, name: "新公众号", mode: "relay", appId: "", appSecretId: `qiaomu-wechat-secret-${id}`, inviteSecretId: `qiaomu-wechat-invite-${id}`, relayUrl: "" });
+        wechat.connections.push({ id, name: "新公众号", mode: "relay", appId: "", appSecretId: `qiaomu-wechat-secret-${id}`, relayUrl: QIAOMU_RELAY_URL });
         wechat.defaultAccountId = id;
         await this.plugin.saveSettings(); this.display();
       }));
@@ -134,16 +135,22 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
       if (connection.mode === "relay") {
         new Setting(group).setName("中转地址").setDesc("必须使用 HTTPS；仅本机调试允许 localhost。")
           .addText((input) => input.setPlaceholder("https://").setValue(connection.relayUrl ?? "").onChange(async (value) => {
-            connection.relayUrl = value.trim(); await this.plugin.saveSettings();
+            connection.relayUrl = value.trim();
+            const ips = knownRelayEgressIps(connection.relayUrl);
+            status.setDesc(ips.length ? `公众号 API IP 白名单：${ips.join("、")}。测试连接不会创建草稿。` : "测试时会调用微信只读接口，不会创建草稿。");
+            await this.plugin.saveSettings();
           }));
-        new Setting(group).setName("邀请密钥").setDesc("乔木手动发放；请求经中转时，AppSecret 会在 HTTPS 连接中被服务器处理，但不保存。")
-          .addText((input) => {
-            input.inputEl.type = "password";
-            input.setValue(this.app.secretStorage.getSecret(connection.inviteSecretId ?? "") ?? "");
-            input.onChange((value) => this.app.secretStorage.setSecret(connection.inviteSecretId ?? "", value.trim()));
-          });
       }
-      const status = new Setting(group).setName("连接状态").setDesc("测试时会调用微信只读接口，不会创建草稿。");
+      const knownIps = connection.mode === "relay" ? knownRelayEgressIps(connection.relayUrl ?? "") : [];
+      const status = new Setting(group).setName("连接状态").setDesc(knownIps.length ? `公众号 API IP 白名单：${knownIps.join("、")}。测试连接不会创建草稿。` : "测试时会调用微信只读接口，不会创建草稿。");
+      if (connection.mode === "relay") status.addButton((button) => button.setButtonText("查看白名单 IP").onClick(async () => {
+        button.setDisabled(true);
+        try {
+          const ips = await relayEgressIps(connection.relayUrl ?? "");
+          status.setDesc(ips.length ? `在公众号后台把 ${ips.join("、")} 加入 API IP 白名单。` : "中转尚未配置固定出口 IP。");
+        } catch (error) { status.setDesc(`读取失败：${error instanceof Error ? error.message : String(error)}`); }
+        finally { button.setDisabled(false); }
+      }));
       status.addButton((button) => button.setButtonText("测试连接").onClick(async () => {
         button.setDisabled(true);
         try {
@@ -153,8 +160,8 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
             await new WechatDirectClient(account, connection.appId, secret).testConnection();
             status.setDesc("连接成功。当前设备出口 IP 已获微信接受。");
           } else {
-            const ips = await new WechatRelayClient(account, connection.appId, secret, this.app.secretStorage.getSecret(connection.inviteSecretId ?? "") ?? "", connection.relayUrl ?? "").testConnection();
-            status.setDesc(ips.length ? `中转可用。请将 ${ips.join("、")} 加入公众号 API 白名单。` : "中转可用；请向管理员确认固定出口 IP。 ");
+            const ips = await new WechatRelayClient(account, connection.appId, secret, this.app.secretStorage.getSecret(connection.inviteSecretId ?? "") || QIAOMU_RELAY_CODE, connection.relayUrl ?? "").testConnection();
+            status.setDesc(ips.length ? `连接成功。微信已接受中转出口 IP ${ips.join("、")}。` : "连接成功，但中转未返回固定出口 IP。");
           }
         } catch (error) { status.setDesc(`连接失败：${error instanceof Error ? error.message : String(error)}`); }
         finally { button.setDisabled(false); }

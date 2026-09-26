@@ -59,6 +59,36 @@ export function resolveCover(app: App, sourcePath: string, meta: DraftMeta, imag
   return first.kind === "remote" ? { kind: "url", url: first.url } : { kind: "image", image: first };
 }
 
+/** A quiet fallback makes a text-only note eligible for a WeChat article draft. */
+async function titleCover(title: string): Promise<ArrayBuffer> {
+  const canvas = document.createElement("canvas");
+  canvas.width = 900;
+  canvas.height = 383;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("当前设备无法生成标题封面，请为笔记指定封面图片");
+  context.fillStyle = "#f5f3ef";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = "#242424";
+  context.fillRect(56, 55, 48, 5);
+  context.font = "600 52px -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif";
+  context.textBaseline = "top";
+  const chars = Array.from(title.trim());
+  const lines: string[] = [];
+  let line = "";
+  for (const char of chars) {
+    if (context.measureText(line + char).width > 770 && line) { lines.push(line); line = char; }
+    else line += char;
+  }
+  if (line) lines.push(line);
+  for (const [index, text] of lines.slice(0, 3).entries()) {
+    const last = index === 2 && lines.length > 3;
+    context.fillText(last ? `${text.slice(0, -1)}…` : text, 56, 125 + index * 68, 790);
+  }
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.88));
+  if (!blob) throw new Error("生成标题封面失败，请为笔记指定封面图片");
+  return blob.arrayBuffer();
+}
+
 export interface PublishCheck { level: "error" | "warning" | "info"; message: string; fix: string; }
 
 export function preflight(meta: DraftMeta, html: string, hasCover: boolean, warnings: string[]): PublishCheck[] {
@@ -102,6 +132,7 @@ export async function publishDraft(options: {
   wechatHtml: string;
   meta: DraftMeta;
   signal?: AbortSignal;
+  existingMediaId?: string;
   onProgress?: PublishProgress;
 }): Promise<{ mediaId: string; accountName: string }> {
   const { app, client, note, meta, onProgress } = options;
@@ -117,10 +148,15 @@ export async function publishDraft(options: {
   }
 
   const cover = resolveCover(app, options.file.path, meta, note.images);
-  if (!cover) throw new Error("没有封面：请在属性中设置 cover，或在正文中放一张图片");
+  if (meta.cover && !cover) throw new Error(`找不到指定封面：${meta.cover}`);
   let thumbMediaId = "";
   let coverUrl = "";
-  if (cover.kind === "url") {
+  if (!cover) {
+    onProgress?.("生成标题封面");
+    const result = await client.uploadImage(meta.accountId, "cover", "title-cover.jpg", "image/jpeg", await titleCover(meta.title));
+    if (!result.media_id) throw new Error("标题封面上传没有返回 media_id");
+    thumbMediaId = result.media_id;
+  } else if (cover.kind === "url") {
     coverUrl = cover.url;
   } else {
     if (options.signal?.aborted) throw new Error("已取消");
@@ -133,7 +169,7 @@ export async function publishDraft(options: {
 
   if (options.signal?.aborted) throw new Error("已取消");
   onProgress?.("创建草稿");
-  const draft = await client.createDraft({
+  const body = {
     account_id: meta.accountId,
     title: meta.title,
     content_html: finalizeWechatImages(options.wechatHtml, sources),
@@ -144,7 +180,8 @@ export async function publishDraft(options: {
     thumb_media_id: thumbMediaId || undefined,
     need_open_comment: meta.openComment,
     publish_now: false,
-  });
+  } as const;
+  const draft = options.existingMediaId ? await client.updateDraft(options.existingMediaId, body) : await client.createDraft(body);
   return { mediaId: draft.media_id, accountName: draft.account?.name ?? meta.accountId };
 }
 

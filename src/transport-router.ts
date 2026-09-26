@@ -3,6 +3,7 @@ import type { WechatPublishSettings } from "./types";
 import { WechatBridgeClient, type WechatAccount, type WechatDraftRequest, type WechatDraftResult } from "./bridge-client";
 import { WechatDirectClient } from "./direct-client";
 import { WechatRelayClient } from "./relay-client";
+import { QIAOMU_RELAY_CODE } from "./defaults";
 import type { WechatTransport } from "./transport";
 
 /** Routes each operation to the account's selected connection without changing legacy Bridge IDs. */
@@ -34,7 +35,7 @@ export class WechatTransportRouter implements WechatTransport {
         const secret = this.app.secretStorage.getSecret(connection.appSecretId) ?? "";
         const client = connection.mode === "direct"
           ? new WechatDirectClient(account, connection.appId, secret)
-          : new WechatRelayClient(account, connection.appId, secret, this.app.secretStorage.getSecret(connection.inviteSecretId ?? "") ?? "", connection.relayUrl ?? "");
+          : new WechatRelayClient(account, connection.appId, secret, this.app.secretStorage.getSecret(connection.inviteSecretId ?? "") || QIAOMU_RELAY_CODE, connection.relayUrl ?? "");
         this.clients.set(id, client);
         accounts.push(account);
       } catch (error) { this.errors.push(`${connection.name}：${error instanceof Error ? error.message : String(error)}`); }
@@ -47,6 +48,12 @@ export class WechatTransportRouter implements WechatTransport {
     if (!client) throw new Error("请先连接并选择公众号");
     return client;
   }
+
+  canUpdateDraft(accountId: string): boolean { return !(this.client(accountId) instanceof WechatBridgeClient); }
+
+  getDraft(accountId: string, mediaId: string): Promise<{ title: string }> { return this.client(accountId).getDraft(accountId, mediaId); }
+
+  updateDraft(mediaId: string, body: WechatDraftRequest): Promise<WechatDraftResult> { return this.client(body.account_id).updateDraft(mediaId, body); }
 
   uploadImage(accountId: string, kind: "content" | "cover", fileName: string, contentType: string, data: ArrayBuffer): Promise<{ url?: string; media_id?: string }> {
     return this.client(accountId).uploadImage(accountId, kind, fileName, contentType, data);
