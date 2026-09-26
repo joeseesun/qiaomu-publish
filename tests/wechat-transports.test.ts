@@ -74,6 +74,26 @@ describe("mixed account routing", () => {
 });
 
 describe("invited relay", () => {
+  it("uses the shared qiaomu code for new relay connections without a stored invitation", async () => {
+    let auth = "";
+    setRequestUrlHandler(async (options) => {
+      if (String(options.url).endsWith("/v2/egress-ip")) return { status: 200, json: { ips: ["8.8.8.8"] } };
+      auth = String((options.headers as Record<string, string> | undefined)?.Authorization ?? "");
+      return { status: 200, json: { ok: true } };
+    });
+    const settings: WechatPublishSettings = { bridgeUrl: "", secretId: "", defaultAccountId: "relay:1", themeId: "qiaomu-podcast", author: "", openComment: true, recordInNote: true, connections: [{ id: "relay:1", name: "我的号", mode: "relay", appId: "wx-test", appSecretId: "app-secret", relayUrl: "https://relay.example.com" }] };
+    const app = { secretStorage: { getSecret: (id: string) => id === "app-secret" ? "secret-value" : "" } } as never;
+    const router = new WechatTransportRouter(app, settings);
+    await router.listAccounts();
+    await router.getDraft("relay:1", "draft-1");
+    expect(auth).toBe("Bearer qiaomu");
+  });
+
+  it("distinguishes a short burst limit from the daily quota", async () => {
+    setRequestUrlHandler(async () => ({ status: 429, json: { error: "中转请求过于频繁，请稍后再试" } }));
+    const client = new WechatRelayClient({ id: "relay:1", name: "我的号" }, "wx-test", "secret-value", "qiaomu", "https://relay.example.com");
+    await expect(client.getDraft("relay:1", "draft-1")).rejects.toThrow("请求过于频繁");
+  });
   it("shows the fixed egress IP before checking WeChat and updates a known draft", async () => {
     const paths: string[] = [];
     let egressHeaders: unknown;

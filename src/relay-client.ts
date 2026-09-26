@@ -12,12 +12,12 @@ export async function relayEgressIps(relayUrl: string): Promise<string[]> {
   return Array.isArray(payload?.ips) ? payload.ips.filter((ip): ip is string => typeof ip === "string") : [];
 }
 
-/** An invited account uses an allowlisted Qiaomu relay for every WeChat API call. */
+/** An account uses the Qiaomu relay for every WeChat API call. */
 export class WechatRelayClient implements WechatTransport {
   private readonly baseUrl: string;
   constructor(private readonly account: WechatAccount, private readonly appId: string, private readonly appSecret: string, private readonly inviteKey: string, relayUrl: string) {
     this.baseUrl = normalizeBridgeUrl(relayUrl);
-    if (!this.baseUrl || !appId || !appSecret || !inviteKey) throw new Error("请填写中转地址、AppID、AppSecret 和邀请密钥");
+    if (!this.baseUrl || !appId || !appSecret || !inviteKey) throw new Error("请填写中转地址、AppID 和 AppSecret");
   }
 
   private async call<T>(path: string, init: Omit<RequestUrlParam, "url"> = {}): Promise<T> {
@@ -30,8 +30,8 @@ export class WechatRelayClient implements WechatTransport {
     const payload = response.json as { error?: string } | null;
     if (response.status < 200 || response.status >= 300) {
       const message = typeof payload?.error === "string" ? payload.error : `中转 HTTP ${response.status}`;
-      if (response.status === 401) throw new Error("邀请密钥无效，或此 AppID 未获授权。请核对后重试。");
-      if (response.status === 429) throw new Error("今日中转请求额度已用完，请稍后再试。");
+      if (response.status === 401) throw new Error("公众号连接未获中转接受，请检查 AppID、AppSecret 与接入码配置。");
+      if (response.status === 429) throw new Error(/过于频繁/.test(message) ? "请求过于频繁，请稍后再试。" : "今日中转请求额度已用完，请明天再试。");
       if (/errcode=40164/.test(message)) throw new Error("微信拒绝此中转服务器的出口 IP。请把上方显示的固定公网 IP 加入公众号 API 白名单。");
       if (/errcode=(40013|40125)/.test(message)) throw new Error("公众号 AppID 或 AppSecret 无效，请检查后重试。");
       if (/errcode=48001/.test(message)) throw new Error("此公众号没有调用该微信接口的权限，请在公众号后台检查接口权限。");

@@ -9,7 +9,7 @@ import { copyWechatHtml } from "./copy-html";
 import { WechatDirectClient } from "./direct-client";
 import { WechatRelayClient, relayEgressIps } from "./relay-client";
 import type QiaomuPublishPlugin from "./main";
-import { QIAOMU_RELAY_URL } from "./defaults";
+import { QIAOMU_RELAY_CODE, QIAOMU_RELAY_URL } from "./defaults";
 
 const PREVIEW_CSS = `:host{display:block}.frame{max-width:677px;margin:0 auto;padding:16px 12px;background:#fff;color:#1a1a1a}img{max-width:100%}`;
 
@@ -215,7 +215,7 @@ export class WechatPublishModal extends Modal {
     const panel = container.createDiv({ cls: "qiaomu-wechat-connect" });
     panel.createEl("h3", { text: "连接你的公众号" });
     panel.createEl("p", { text: "连接一次，以后打开笔记就能直接发到自己的草稿箱。" });
-    const input = { mode: "relay" as "relay" | "direct", appId: "", appSecret: "", relayUrl: QIAOMU_RELAY_URL, inviteKey: "" };
+    const input = { mode: "relay" as "relay" | "direct", appId: "", appSecret: "", relayUrl: QIAOMU_RELAY_URL };
     panel.createEl("a", { text: "前往公众号后台获取 AppID 和 AppSecret", href: "https://mp.weixin.qq.com/", attr: { target: "_blank", rel: "noopener noreferrer" } });
     const mode = new Setting(panel).setName("连接方式").addDropdown((dropdown) => {
       dropdown.addOption("relay", "固定 IP 中转（推荐）");
@@ -230,8 +230,6 @@ export class WechatPublishModal extends Modal {
     const ipButton = relayFields.createEl("button", { text: "查看白名单 IP" });
     const ipStatus = relayFields.createDiv({ cls: "qiaomu-wechat-connect-status" });
     ipStatus.setAttribute("role", "status");
-    new Setting(relayFields).setName("邀请密钥").setDesc("由乔木发放；只保存在本机 SecretStorage。")
-      .addText((text) => { text.inputEl.type = "password"; text.onChange((value) => { input.inviteKey = value.trim(); }); });
     new Setting(panel).setName("AppID").addText((text) => text.setPlaceholder("在公众号后台获取").onChange((value) => { input.appId = value.trim(); }));
     new Setting(panel).setName("AppSecret").addText((text) => {
       text.inputEl.type = "password";
@@ -242,7 +240,7 @@ export class WechatPublishModal extends Modal {
     const actions = panel.createDiv({ cls: "qiaomu-wechat-connect-actions" });
     const connectButton = actions.createEl("button", { text: "测试并连接", cls: "mod-cta" });
     const account = { id: "new", name: "新公众号" };
-    const relay = () => new WechatRelayClient(account, input.appId, input.appSecret, input.inviteKey, input.relayUrl);
+    const relay = () => new WechatRelayClient(account, input.appId, input.appSecret, QIAOMU_RELAY_CODE, input.relayUrl);
     ipButton.addEventListener("click", () => void (async () => {
       ipButton.disabled = true;
       try {
@@ -262,18 +260,15 @@ export class WechatPublishModal extends Modal {
         else await new WechatDirectClient(account, input.appId, input.appSecret).testConnection();
         const id = `${input.mode}:${crypto.randomUUID()}`;
         const appSecretId = `qiaomu-wechat-secret-${id}`;
-        const inviteSecretId = input.mode === "relay" ? `qiaomu-wechat-invite-${id}` : undefined;
         this.app.secretStorage.setSecret(appSecretId, input.appSecret);
-        if (inviteSecretId) this.app.secretStorage.setSecret(inviteSecretId, input.inviteKey);
         const previousDefault = this.settings.defaultAccountId;
-        this.settings.connections.push({ id, name: `我的公众号 ${input.appId.slice(-4)}`, mode: input.mode, appId: input.appId, appSecretId, relayUrl: input.mode === "relay" ? input.relayUrl : undefined, inviteSecretId });
+        this.settings.connections.push({ id, name: `我的公众号 ${input.appId.slice(-4)}`, mode: input.mode, appId: input.appId, appSecretId, relayUrl: input.mode === "relay" ? input.relayUrl : undefined });
         this.settings.defaultAccountId = id;
         try { await this.plugin.saveSettings(); }
         catch (error) {
           this.settings.connections = this.settings.connections.filter((item) => item.id !== id);
           this.settings.defaultAccountId = previousDefault;
           this.app.secretStorage.setSecret(appSecretId, "");
-          if (inviteSecretId) this.app.secretStorage.setSecret(inviteSecretId, "");
           throw error;
         }
         this.clientError = "";
