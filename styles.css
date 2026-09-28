@@ -28,3 +28,10 @@
   .qiaomu-wechat-actions button { flex: 1 1 auto; min-height: 44px; }
   .qiaomu-wechat-form .qiaomu-wechat-wide { width: 100%; }
 }
+
+/* Hide note metadata only while this plugin owns the active view; no Home dependency. */
+body:has(.workspace-leaf.mod-active > .workspace-leaf-content:is(
+  [data-type="qiaomu-wechat-preview"]
+)) .status-bar {
+  display: none;
+}
