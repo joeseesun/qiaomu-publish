@@ -1,7 +1,7 @@
 {
   "id": "qiaomu-publish",
   "name": "Qiaomu Publish",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "minAppVersion": "1.11.4",
   "description": "Preview notes in WeChat Official Account style, copy formatted HTML, or send them to your drafts.",
   "author": "向阳乔木",

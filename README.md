@@ -44,3 +44,11 @@ npm run dev
 ## License
 
 MIT
+
+## English
+
+Qiaomu Publish previews an Obsidian note as a WeChat Official Account article. Open the preview from the command palette, ribbon, or file menu; copy the formatted HTML, or explicitly send the article to your account's draft box. It never performs a mass publication. Preview and copying work without an account or connection.
+
+To create drafts, configure a WeChat Official Account through the direct WeChat API, an invitation-based Qiaomu relay, or your own qmblog Bridge. Account credentials and IP allowlisting may be required. Draft creation uploads the selected article and images through that connection. The Qiaomu relay receives the AppID, AppSecret, article and images over HTTPS to call WeChat's API. External images in a preview may load from their original hosts; connection tests and draft uploads also use the network. Credentials use Obsidian SecretStorage rather than synchronized plugin settings.
+
+On first setup, the plugin can read the older Qiaomu Agent publishing configuration from the same vault to migrate it without modifying Agent's files. The plugin is MIT licensed.
