@@ -1,6 +1,6 @@
 {
   "name": "qiaomu-publish",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Preview and publish Obsidian notes as WeChat Official Account drafts.",
   "type": "module",
   "main": "main.js",

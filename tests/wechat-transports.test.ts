@@ -74,12 +74,43 @@ describe("mixed account routing", () => {
 });
 
 describe("invited relay", () => {
+  it.each([
+    [401, "Relay authentication failed or quota reached", "中转未授权"],
+    [503, "Relay is not configured", "尚未配置完成"],
+    [404, "Not found", "版本过旧"],
+  ])("explains relay infrastructure HTTP %s without blaming the AppSecret", async (status, error, expected) => {
+    setRequestUrlHandler(async (options) => String(options.url).endsWith("/v2/egress-ip")
+      ? { status: 200, json: { ips: ["8.8.8.8"] } } : { status, json: { error } });
+    const client = new WechatRelayClient({ id: "relay:1", name: "我的号" }, "wx-test", "secret-value", "qiaomu", "https://relay.example.com");
+    await expect(client.testConnection()).rejects.toThrow(expected);
+  });
+
+  it.each([
+    [40164, "API 白名单"], [40125, "AppID 或 AppSecret 无效"], [48001, "接口的权限"],
+  ])("preserves the specific WeChat error %s from the relay", async (errcode, expected) => {
+    setRequestUrlHandler(async () => ({ status: 502, json: { error: `WeChat rejected request errcode=${errcode}` } }));
+    const client = new WechatRelayClient({ id: "relay:1", name: "我的号" }, "wx-test", "secret-value", "qiaomu", "https://relay.example.com");
+    await expect(client.getDraft("relay:1", "draft-1")).rejects.toThrow(expected);
+  });
+
   it("shows Qiaomu's verified whitelist IP when the public endpoint returns 401", async () => {
     setRequestUrlHandler(async () => ({ status: 401, json: { error: "Relay authentication failed" } }));
     expect(knownRelayEgressIps("https://wx.qiaomu.ai/")).toEqual(["207.148.115.69"]);
     expect(await relayEgressIps("https://wx.qiaomu.ai")).toEqual(["207.148.115.69"]);
     await expect(relayEgressIps("https://another-relay.example")).rejects.toThrow("HTTP 401");
   });
+  it("handles an HTML proxy error without trying to parse JSON", async () => {
+    setRequestUrlHandler(async () => ({ status: 503, get json() { throw new SyntaxError("not JSON"); } }));
+    const client = new WechatRelayClient({ id: "relay:1", name: "我的号" }, "wx-test", "secret-value", "qiaomu", "https://relay.example.com");
+    await expect(client.getDraft("relay:1", "draft-1")).rejects.toThrow("尚未配置完成");
+  });
+
+  it("redacts credentials if an upstream error accidentally echoes them", async () => {
+    setRequestUrlHandler(async () => ({ status: 502, json: { error: "Unexpected secret-value wx-test private-invite" } }));
+    const client = new WechatRelayClient({ id: "relay:1", name: "我的号" }, "wx-test", "secret-value", "private-invite", "https://relay.example.com");
+    await expect(client.getDraft("relay:1", "draft-1")).rejects.toThrow("Unexpected [已隐藏] [已隐藏] [已隐藏]");
+  });
+
   it("uses the shared qiaomu code for new relay connections without a stored invitation", async () => {
     let auth = "";
     setRequestUrlHandler(async (options) => {
