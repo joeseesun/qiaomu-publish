@@ -135,7 +135,19 @@ function normalizeCodeLinesMarkup(code: HTMLElement) {
 
   const codeLines = code.ownerDocument.createElement('span')
   codeLines.className = 'wechat-code-lines'
-  codeLines.innerHTML = buildPlainCodeLinesHtml(codeText)
+  for (const [index, line] of codeText.split('\n').entries()) {
+    const row = code.ownerDocument.createElement('span')
+    row.className = 'wechat-code-row'
+    const number = code.ownerDocument.createElement('span')
+    number.className = 'wechat-code-line-number'
+    number.setAttribute('aria-hidden', 'true')
+    number.textContent = String(index + 1)
+    const content = code.ownerDocument.createElement('span')
+    content.className = 'wechat-code-line'
+    content.textContent = line || '\u00a0'
+    row.append(number, content)
+    codeLines.append(row)
+  }
 
   codeScroll.appendChild(codeLines)
   body.appendChild(codeScroll)
@@ -160,7 +172,8 @@ function normalizeCodeBlockMarkup(root: ParentNode) {
     sign.className = 'mac-sign'
     sign.setAttribute('aria-hidden', 'true')
     sign.setAttribute('style', 'padding: 10px 14px 0;')
-    sign.innerHTML = WECHAT_MAC_CODE_SVG
+    const svg = new DOMParser().parseFromString(WECHAT_MAC_CODE_SVG, 'image/svg+xml').documentElement
+    sign.append(pre.ownerDocument.importNode(svg, true))
 
     pre.insertBefore(sign, code)
   }
@@ -450,7 +463,7 @@ function normalizeWechatImageGridMarkup(root: ParentNode) {
 
 function replaceElementWithInlineSpan(element: HTMLElement) {
   const span = element.ownerDocument.createElement('span')
-  span.innerHTML = element.innerHTML
+  span.append(...Array.from(element.childNodes))
 
   const style = element.getAttribute('style')
   if (style) span.setAttribute('style', style)

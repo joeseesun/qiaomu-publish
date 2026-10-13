@@ -1,4 +1,4 @@
-import { type App, Component, Modal, Notice, setIcon, Setting, type TFile } from "obsidian";
+import { type App, Component, Modal, Notice, sanitizeHTMLToDom, setIcon, Setting, type TFile } from "obsidian";
 import type { WechatPublishSettings } from "./types";
 import type { WechatAccount } from "./bridge-client";
 import { WechatTransportRouter } from "./transport-router";
@@ -179,12 +179,12 @@ export class WechatPublishModal extends Modal {
       this.wechatHtml = "";
       this.statusEl.setText(`排版失败：${error instanceof Error ? error.message : String(error)}`);
     }
-    this.previewRoot.innerHTML = "";
+    this.previewRoot.replaceChildren();
     const style = document.createElement("style");
     style.textContent = PREVIEW_CSS;
     const frame = document.createElement("div");
     frame.className = "frame";
-    frame.innerHTML = this.wechatHtml;
+    frame.replaceChildren(sanitizeHTMLToDom(this.wechatHtml));
     this.previewRoot.append(style, frame);
     this.refreshChecks();
   }

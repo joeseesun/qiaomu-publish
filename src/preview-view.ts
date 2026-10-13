@@ -1,4 +1,4 @@
-import { ItemView, MarkdownView, Menu, setIcon, setTooltip, TFile, type WorkspaceLeaf } from "obsidian";
+import { ItemView, MarkdownView, Menu, sanitizeHTMLToDom, setIcon, setTooltip, TFile, type WorkspaceLeaf } from "obsidian";
 import type QiaomuPublishPlugin from "./main";
 import { buildWechatHtml, resolveWechatTheme } from "./export-html";
 import { renderNoteForWechat, type RenderedNote } from "./render-note";
@@ -241,7 +241,7 @@ export class WechatPreviewView extends ItemView {
       if (html !== this.wechatHtml) {
         const fraction = this.frame.scrollTop / Math.max(1, this.frame.scrollHeight - this.frame.clientHeight);
         this.wechatHtml = html;
-        this.shadow.querySelector(".article")!.innerHTML = html;
+        this.shadow.querySelector(".article")!.replaceChildren(sanitizeHTMLToDom(html));
         this.pendingPreviewTop = Math.round(fraction * Math.max(0, this.frame.scrollHeight - this.frame.clientHeight));
         this.frame.scrollTop = this.pendingPreviewTop;
         this.syncFromSource();
@@ -268,13 +268,13 @@ export class WechatPreviewView extends ItemView {
       this.note?.dispose();
       this.note = note;
       this.wechatHtml = html;
-      this.shadow.innerHTML = "";
+      this.shadow.replaceChildren();
       const style = this.frame.ownerDocument.createElement("style");
       style.textContent = ":host{display:block}.article{box-sizing:border-box;padding:22px 0 36px;background:#fff;color:#1a1a1a;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif}.article img{max-width:100%}";
       this.shadow.append(style);
       const article = this.frame.ownerDocument.createElement("div");
       article.className = "article";
-      article.innerHTML = html;
+      article.replaceChildren(sanitizeHTMLToDom(html));
       this.shadow.append(article);
       this.setReady(true);
       this.stylePanel.sync(appearance, this.shadow);

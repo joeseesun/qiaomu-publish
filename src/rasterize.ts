@@ -1,4 +1,4 @@
-import { loadMathJax } from "obsidian";
+import { loadMathJax, sanitizeHTMLToDom } from "obsidian";
 import { renderMermaidSvg, sizeSvg } from "./host-mermaid";
 
 export interface RasterImage {
@@ -49,7 +49,7 @@ export async function mathToPng(tex: string, display: boolean, color = "#1a1a1a"
 
   const probe = document.body.createDiv();
   probe.setCssStyles({ position: "fixed", left: "-10000px", top: "0", fontSize: "17px", color, fontFamily: MATH_FONT, lineHeight: "1.2" });
-  probe.innerHTML = mathml;
+  probe.replaceChildren(sanitizeHTMLToDom(mathml));
   const math = probe.querySelector("math");
   if (!math) { probe.remove(); return null; }
   math.setAttribute("xmlns", "http://www.w3.org/1998/Math/MathML");

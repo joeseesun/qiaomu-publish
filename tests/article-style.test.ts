@@ -41,6 +41,15 @@ describe("shared preview/copy/draft HTML", () => {
     expect(buildWechatHtml(input, theme, undefined, {})).toBe(buildWechatHtml(input, theme));
   });
 
+  it("keeps HTML-looking code as text when building code rows without innerHTML", () => {
+    const html = buildWechatHtml('<pre><code>&lt;img src=x onerror=alert(1)&gt;\n\nsecond line</code></pre>', resolveWechatTheme("qiaomu-podcast"));
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    expect(doc.querySelector("pre img")).toBeNull();
+    expect(doc.querySelector(".wechat-code-line")?.textContent).toBe("<img src=x onerror=alert(1)>");
+    expect(doc.querySelectorAll(".wechat-code-row")).toHaveLength(3);
+    expect(doc.querySelectorAll(".mac-sign svg ellipse")).toHaveLength(3);
+  });
+
   it.each(["qiaomu-podcast", "vercel-mono", "qiaomu-clean-reading", "nvidia-compute"])("inlines overrides after %s while preserving heading, code and image semantics", (id) => {
     const theme = resolveWechatTheme(id);
     const original = new DOMParser().parseFromString(buildWechatHtml(input, theme), "text/html");
