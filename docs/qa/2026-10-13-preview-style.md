@@ -9,7 +9,7 @@ Candidate version: 0.1.2. Scope: preview, copy and draft formatting; no WeChat c
 - Opened the appearance panel and used native keyboard arrow input to change 17px to 19.5px. The article updated immediately, focus stayed on the slider, and the panel reported saved. Read back plugin data.json to confirm the note-specific font setting.
 - Switched to the second fixture: it retained the theme default of 17px. The first note's setting stayed separate.
 - Reviewed the real light-theme sidebar rendering. Escape closed the panel and returned focus to the paintbrush. Fixed the previously reported unsafe innerHTML assignments with native node construction and Obsidian sanitizeHTMLToDom. Fixed a host CSS conflict that displayed the hidden retry button, and corrected override targeting for normalized list sections before the final build.
-- Remote CI exposed extraneous non-optional esbuild platform packages in the lockfile; regenerated the lockfile metadata without changing declared dependencies. npm ci dry-run passed. Official scan errors were addressed by moving static styles into CSS, removing injected style elements, and using native Setting headings.
+- Remote CI exposed extraneous non-optional esbuild platform packages in the lockfile; regenerated the lockfile metadata without changing declared dependencies. Clean npm 10 ci installation and the full check passed; this matches the Node 22 GitHub runner npm major version. Official scan errors were addressed by moving static styles into CSS, removing injected style elements, and using native Setting headings.
 - Shared formatting tests cover four themes, inline font size/line height/spacing/padding, unchanged heading/code styles, retained image markers, invalid persisted values, legacy settings and appearance precedence.
 
 Limitations: dark-theme and mobile runtime were not exercised; actual clipboard paste into WeChat and remote draft delivery were not exercised. The Obsidian CLI was disabled in the running app; native UI was used for QA without changing CLI access. The final list/padding/CSS and scanner fixes passed automated checks; a fresh native reload of that final build is still needed. Native UI control subsequently reported user activity, so further app operations were stopped.
@@ -22,4 +22,4 @@ manifest.json 6c7afc800760753dbf8e23bff0cb970c35a34f0cb499adcfe850a1d56df3abc8
 styles.css    58632ebfdd00be38748a32921ecb81cbc238d420d9dba83e0511618f44b4fe71
 ```
 
-Public release remains gated on the official preview scan for the final commit. Version 0.1.1 is already a separate draft and is not replaced by this candidate.
+The b9248b3 official preview scan completed without errors; its subsequent lockfile correction requires a scan of the final commit. Public release also remains gated on a fresh native reload of the final assets. Version 0.1.1 is already a separate draft and is not replaced by this candidate.
