@@ -65,7 +65,7 @@ describe("mixed account routing", () => {
       if (String(options.url).endsWith("/v1/accounts")) return { status: 200, json: { accounts: [{ id: "old", name: "原有账号" }] } };
       throw new Error("unexpected request");
     });
-    const settings: WechatPublishSettings = { bridgeUrl: "https://bridge.example.com", secretId: "bridge-token", defaultAccountId: "old", themeId: "qiaomu-podcast", author: "", openComment: true, recordInNote: true, connections: [{ id: "direct:new", name: "新账号", mode: "direct", appId: "wx-new", appSecretId: "new-secret" }] };
+    const settings: WechatPublishSettings = { bridgeUrl: "https://bridge.example.com", secretId: "bridge-token", defaultAccountId: "old", themeId: "qiaomu-podcast", articleStyle: {}, noteStyles: {}, author: "", openComment: true, recordInNote: true, connections: [{ id: "direct:new", name: "新账号", mode: "direct", appId: "wx-new", appSecretId: "new-secret" }] };
     const app = { secretStorage: { getSecret: (id: string) => ({ "bridge-token": "bridge-key", "new-secret": "app-secret" })[id] ?? "" } } as never;
     const router = new WechatTransportRouter(app, settings);
     expect(await router.listAccounts()).toEqual([{ id: "old", name: "原有账号" }, { id: "direct:new", name: "新账号" }]);
@@ -87,7 +87,7 @@ describe("invited relay", () => {
       auth = String((options.headers as Record<string, string> | undefined)?.Authorization ?? "");
       return { status: 200, json: { ok: true } };
     });
-    const settings: WechatPublishSettings = { bridgeUrl: "", secretId: "", defaultAccountId: "relay:1", themeId: "qiaomu-podcast", author: "", openComment: true, recordInNote: true, connections: [{ id: "relay:1", name: "我的号", mode: "relay", appId: "wx-test", appSecretId: "app-secret", relayUrl: "https://relay.example.com" }] };
+    const settings: WechatPublishSettings = { bridgeUrl: "", secretId: "", defaultAccountId: "relay:1", themeId: "qiaomu-podcast", articleStyle: {}, noteStyles: {}, author: "", openComment: true, recordInNote: true, connections: [{ id: "relay:1", name: "我的号", mode: "relay", appId: "wx-test", appSecretId: "app-secret", relayUrl: "https://relay.example.com" }] };
     const app = { secretStorage: { getSecret: (id: string) => id === "app-secret" ? "secret-value" : "" } } as never;
     const router = new WechatTransportRouter(app, settings);
     await router.listAccounts();

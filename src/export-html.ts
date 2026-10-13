@@ -2,6 +2,8 @@ import { buildWechatExportCss, type WechatExportStyleTokens } from "./export-sty
 import { inlineCss } from "./inline-css";
 import { buildWechatExportFragment, normalizeInlinedWechatHtml, normalizeWechatArticleDom, parseWechatArticleHtml } from "./normalize";
 import { DEFAULT_WECHAT_EXPORT_THEME_CONFIG, getWechatExportTheme, WECHAT_EXPORT_BUILTIN_THEMES, type WechatExportTheme } from "./themes";
+import { buildArticleStyleCss } from "./article-style";
+import type { WechatArticleStyle } from "./types";
 
 /** The blog's light article palette (fallbacks of qmblog readWechatExportStyleTokens). */
 export const WECHAT_STYLE_TOKENS: WechatExportStyleTokens = {
@@ -36,13 +38,13 @@ export function resolveWechatTheme(themeId?: string | null): WechatExportTheme {
 }
 
 /** Article HTML → WeChat-ready HTML with every style inlined. `data-qm-image` markers are preserved. */
-export function buildWechatHtml(articleHtml: string, theme: WechatExportTheme, baseUrl?: string): string {
+export function buildWechatHtml(articleHtml: string, theme: WechatExportTheme, baseUrl?: string, style?: WechatArticleStyle): string {
   const doc = parseWechatArticleHtml(articleHtml);
   normalizeWechatArticleDom(doc, { baseUrl });
   const fragmentDoc = new DOMParser().parseFromString(buildWechatExportFragment(doc.body.innerHTML), "text/html");
   const root = fragmentDoc.body.firstElementChild;
   if (!root) return "";
-  inlineCss(root, buildWechatExportCss(WECHAT_STYLE_TOKENS, theme));
+  inlineCss(root, `${buildWechatExportCss(WECHAT_STYLE_TOKENS, theme)}\n${buildArticleStyleCss(style)}`);
   return normalizeInlinedWechatHtml(root.outerHTML);
 }
 

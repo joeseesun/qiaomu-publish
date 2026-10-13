@@ -1,9 +1,12 @@
-import { ItemView, MarkdownView, Menu, TFile, type WorkspaceLeaf } from "obsidian";
+import { ItemView, MarkdownView, Menu, setIcon, setTooltip, TFile, type WorkspaceLeaf } from "obsidian";
 import type QiaomuPublishPlugin from "./main";
-import { buildWechatHtml, listWechatThemes, resolveWechatTheme } from "./export-html";
+import { buildWechatHtml, resolveWechatTheme } from "./export-html";
 import { renderNoteForWechat, type RenderedNote } from "./render-note";
 import { copyWechatHtml } from "./copy-html";
 import { mapScrollTop } from "./scroll-sync";
+import { ArticleStylePanel } from "./article-style-panel";
+import { resolveArticleAppearance } from "./article-style";
+import { STYLE_TEXT } from "./style-text";
 
 export const WECHAT_PREVIEW_VIEW = "qiaomu-wechat-preview";
 
@@ -23,6 +26,10 @@ export class WechatPreviewView extends ItemView {
   private sourceView: MarkdownView | null = null;
   private pendingSourceTop = -1;
   private pendingPreviewTop = -1;
+  private stylePanel!: ArticleStylePanel;
+  private styleAction!: HTMLButtonElement;
+  private copyAction!: HTMLButtonElement;
+  private ready = false;
 
   constructor(leaf: WorkspaceLeaf, private readonly plugin: QiaomuPublishPlugin) { super(leaf); }
   getViewType(): string { return WECHAT_PREVIEW_VIEW; }
@@ -31,16 +38,45 @@ export class WechatPreviewView extends ItemView {
 
   override async onOpen(): Promise<void> {
     const root = this.contentEl.createDiv({ cls: "qiaomu-wechat-live-preview" });
-    this.addAction("sliders-horizontal", "预览选项", (event) => this.openOptions(event));
-    this.addAction("copy", "复制公众号格式", () => void this.copy());
-    this.addAction("send", "打开草稿发布", () => { if (this.file) this.plugin.openWechatPublish(this.file); });
+    // Sidebar leaves can hide the host view-header and all ItemView.addAction controls.
+    const toolbar = root.createDiv({ cls: "qiaomu-wechat-preview-toolbar" });
+    const action = (icon: string, name: string, callback: (event: MouseEvent) => void): HTMLButtonElement => {
+      const button = toolbar.createEl("button", { cls: "clickable-icon", attr: { type: "button", "aria-label": name } });
+      setIcon(button, icon);
+      setTooltip(button, name);
+      this.registerDomEvent(button, "click", callback);
+      return button;
+    };
+    this.styleAction = action("paintbrush", STYLE_TEXT.action, () => {
+      if (!this.ready) return;
+      const open = this.stylePanel.el.hidden;
+      this.styleAction.setAttribute("aria-expanded", String(open));
+      this.stylePanel.show(open);
+    });
+    this.styleAction.setAttribute("aria-expanded", "false");
+    action("sliders-horizontal", "预览选项", (event) => this.openOptions(event));
+    this.copyAction = action("copy", "复制公众号格式", () => void this.copy());
+    action("send", "打开草稿发布", () => { if (this.file) this.plugin.openWechatPublish(this.file); });
     this.status = root.createDiv({ cls: "qiaomu-wechat-preview-status", attr: { role: "status" } });
+    this.stylePanel = new ArticleStylePanel(root, {
+      change: (appearance) => this.plugin.saveNoteAppearance(this.file!.path, appearance),
+      reset: () => this.plugin.saveNoteAppearance(this.file!.path, null),
+      makeDefault: () => this.plugin.setDefaultAppearance(this.appearance()),
+      retry: () => this.plugin.saveSettings(),
+      close: () => {
+        this.stylePanel.show(false);
+        this.styleAction.setAttribute("aria-expanded", "false");
+        this.styleAction.focus();
+      },
+    });
     this.frame = root.createDiv({ cls: "qiaomu-wechat-preview-frame is-phone" });
     this.shadow = this.frame.createDiv({ cls: "qiaomu-wechat-preview-paper" }).attachShadow({ mode: "open" });
+    this.register(this.plugin.onAppearanceChange(() => this.updateAppearance()));
     this.registerDomEvent(this.frame, "scroll", this.onPreviewScroll, { passive: true });
     this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.followActiveFile()));
     this.registerEvent(this.app.workspace.on("layout-change", () => this.bindMatchingSource()));
     this.registerEvent(this.app.vault.on("modify", (file) => { if (file.path === this.file?.path) this.schedule(); }));
+    this.setReady(false);
     this.followActiveFile();
   }
 
@@ -162,7 +198,12 @@ export class WechatPreviewView extends ItemView {
     this.contentEl.empty();
   }
 
-  setFile(file: TFile): void { this.file = file; this.bindMatchingSource(); this.schedule(); }
+  setFile(file: TFile): void {
+    if (file.path !== this.file?.path) this.stylePanel?.clearStatus();
+    this.file = file;
+    this.bindMatchingSource();
+    this.schedule();
+  }
 
   private followActiveFile(): void {
     const active = this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -174,35 +215,69 @@ export class WechatPreviewView extends ItemView {
 
   private schedule(): void {
     this.generation++;
+    this.setReady(false);
     this.wechatHtml = "";
     if (this.timer !== null) window.clearTimeout(this.timer);
     this.timer = window.setTimeout(() => { this.timer = null; void this.refresh(); }, 350);
+  }
+
+  private setReady(ready: boolean): void {
+    this.ready = ready;
+    this.styleAction?.setAttribute("aria-disabled", String(!ready));
+    if (this.styleAction) this.styleAction.disabled = !ready;
+    if (this.copyAction) this.copyAction.disabled = !ready;
+    this.stylePanel?.setEnabled(ready);
+  }
+
+  private appearance() {
+    return resolveArticleAppearance(this.plugin.settings.wechat, this.file!.path, this.note?.frontmatter);
+  }
+
+  private updateAppearance(): void {
+    if (!this.ready || !this.note || !this.file) return;
+    try {
+      const appearance = this.appearance();
+      const html = buildWechatHtml(this.note.html, resolveWechatTheme(appearance.themeId), undefined, appearance.style);
+      if (html !== this.wechatHtml) {
+        const fraction = this.frame.scrollTop / Math.max(1, this.frame.scrollHeight - this.frame.clientHeight);
+        this.wechatHtml = html;
+        this.shadow.querySelector(".article")!.innerHTML = html;
+        this.pendingPreviewTop = Math.round(fraction * Math.max(0, this.frame.scrollHeight - this.frame.clientHeight));
+        this.frame.scrollTop = this.pendingPreviewTop;
+        this.syncFromSource();
+      }
+      this.stylePanel.sync(appearance, this.shadow);
+    } catch (error) {
+      this.wechatHtml = "";
+      this.status.setText(`预览失败：${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   private async refresh(): Promise<void> {
     const file = this.file;
     if (!file || !this.frame?.isConnected) { if (this.status) this.status.setText("打开一篇 Markdown 笔记以预览。"); return; }
     const generation = ++this.generation;
+    this.setReady(false);
     this.wechatHtml = "";
     this.status.setText(`正在排版：${file.basename}`);
     try {
       const note = await renderNoteForWechat(this.app, file, this);
       if (generation !== this.generation || !this.frame.isConnected) { note.dispose(); return; }
-      const themeField = [note.frontmatter.wechat_theme, note.frontmatter["公众号主题"]].find((value) => typeof value === "string");
-      const themeId = typeof themeField === "string" && listWechatThemes().some((theme) => theme.id === themeField)
-        ? themeField : this.plugin.settings.wechat.themeId;
-      const html = buildWechatHtml(note.html, resolveWechatTheme(themeId));
+      const appearance = resolveArticleAppearance(this.plugin.settings.wechat, file.path, note.frontmatter);
+      const html = buildWechatHtml(note.html, resolveWechatTheme(appearance.themeId), undefined, appearance.style);
       this.note?.dispose();
       this.note = note;
       this.wechatHtml = html;
       this.shadow.innerHTML = "";
-      const style = document.createElement("style");
-      style.textContent = ":host{display:block}.article{box-sizing:border-box;padding:22px 12px 36px;background:#fff;color:#1a1a1a;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif}.article img{max-width:100%}";
+      const style = this.frame.ownerDocument.createElement("style");
+      style.textContent = ":host{display:block}.article{box-sizing:border-box;padding:22px 0 36px;background:#fff;color:#1a1a1a;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif}.article img{max-width:100%}";
       this.shadow.append(style);
-      const article = document.createElement("div");
+      const article = this.frame.ownerDocument.createElement("div");
       article.className = "article";
       article.innerHTML = html;
       this.shadow.append(article);
+      this.setReady(true);
+      this.stylePanel.sync(appearance, this.shadow);
       this.updateStatus();
       this.syncFromSource();
     } catch (error) { if (generation === this.generation) this.status.setText(`预览失败：${error instanceof Error ? error.message : String(error)}`); }

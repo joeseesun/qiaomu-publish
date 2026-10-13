@@ -1,4 +1,5 @@
 import type { QiaomuPublishSettings, WechatPublishSettings } from "./types";
+import { normalizeArticleStyle, normalizeNoteStyles } from "./article-style";
 
 export const QIAOMU_RELAY_URL = "https://wx.qiaomu.ai";
 export const QIAOMU_RELAY_EGRESS_IP = "207.148.115.69";
@@ -11,6 +12,8 @@ export const DEFAULT_SETTINGS: QiaomuPublishSettings = {
     secretId: "qiaomu-publish-wechat-bridge-token",
     defaultAccountId: "",
     themeId: "qiaomu-podcast",
+    articleStyle: {},
+    noteStyles: {},
     author: "",
     openComment: true,
     recordInNote: true,
@@ -33,6 +36,8 @@ export function normalizeWechatSettings(raw: unknown): WechatPublishSettings {
     secretId: text(data.secretId, defaults.secretId) || defaults.secretId,
     defaultAccountId: text(data.defaultAccountId, defaults.defaultAccountId),
     themeId: text(data.themeId, defaults.themeId) || defaults.themeId,
+    articleStyle: normalizeArticleStyle(data.articleStyle),
+    noteStyles: normalizeNoteStyles(data.noteStyles),
     author: text(data.author, defaults.author),
     openComment: flag(data.openComment, defaults.openComment),
     recordInNote: flag(data.recordInNote, defaults.recordInNote),

@@ -1,0 +1,20 @@
+/** Publish currently uses Chinese UI. Keep new appearance copy together for future localization. */
+export const STYLE_TEXT = {
+  action: "调整排版",
+  title: "排版",
+  scope: "仅用于当前笔记，自动保存",
+  theme: "主题",
+  fontSize: "正文字号",
+  lineHeight: "行距",
+  paragraphSpacing: "段落间距",
+  pagePadding: "左右留白",
+  themeDefault: "主题默认",
+  reset: "恢复原有排版",
+  makeDefault: "设为默认",
+  close: "关闭排版设置",
+  saving: "正在保存…",
+  saved: "已保存",
+  defaultSaved: "已设为其他笔记的默认排版",
+  saveFailed: "保存失败，请重试",
+  retry: "重试保存",
+} as const;

@@ -10,14 +10,17 @@ import { WechatDirectClient } from "./direct-client";
 import { WechatRelayClient, knownRelayEgressIps, relayEgressIps } from "./relay-client";
 import type QiaomuPublishPlugin from "./main";
 import { QIAOMU_RELAY_CODE, QIAOMU_RELAY_URL } from "./defaults";
+import { resolveArticleAppearance } from "./article-style";
+import type { WechatArticleStyle } from "./types";
 
-const PREVIEW_CSS = `:host{display:block}.frame{max-width:677px;margin:0 auto;padding:16px 12px;background:#fff;color:#1a1a1a}img{max-width:100%}`;
+const PREVIEW_CSS = `:host{display:block}.frame{max-width:677px;margin:0 auto;padding:16px 0;background:#fff;color:#1a1a1a}img{max-width:100%}`;
 
 export class WechatPublishModal extends Modal {
   private readonly component = new Component();
   private note: RenderedNote | null = null;
   private meta: DraftMeta | null = null;
   private themeId: string;
+  private articleStyle: WechatArticleStyle = {};
   private wechatHtml = "";
   private accounts: WechatAccount[] = [];
   private client: WechatTransportRouter | null = null;
@@ -77,8 +80,9 @@ export class WechatPublishModal extends Modal {
         openComment: this.settings.openComment,
       });
       if (this.accounts.length && !this.accounts.some((account) => account.id === this.meta!.accountId)) this.meta.accountId = this.accounts[0]!.id;
-      const themeField = [note.frontmatter.wechat_theme, note.frontmatter["公众号主题"]].find((value) => typeof value === "string");
-      if (typeof themeField === "string" && listWechatThemes().some((theme) => theme.id === themeField)) this.themeId = themeField;
+      const appearance = resolveArticleAppearance(this.settings, this.file.path, note.frontmatter);
+      this.themeId = appearance.themeId;
+      this.articleStyle = appearance.style;
       this.renderForm();
     } catch (error) {
       this.statusEl.setText(`排版失败：${error instanceof Error ? error.message : String(error)}`);
@@ -95,7 +99,7 @@ export class WechatPublishModal extends Modal {
     if (this.accounts.length === 0) {
       this.renderConnectionForm(form);
       let previewError = "";
-      try { this.wechatHtml = buildWechatHtml(note.html, resolveWechatTheme(this.themeId)); }
+      try { this.wechatHtml = buildWechatHtml(note.html, resolveWechatTheme(this.themeId), undefined, this.articleStyle); }
       catch (error) { this.wechatHtml = ""; previewError = `排版失败：${error instanceof Error ? error.message : String(error)}`; }
       const footer = contentEl.createDiv({ cls: "qiaomu-wechat-footer" });
       this.statusEl = footer.createDiv({ cls: "qiaomu-wechat-status" });
@@ -170,7 +174,7 @@ export class WechatPublishModal extends Modal {
   private renderPreview(): void {
     if (!this.note) return;
     try {
-      this.wechatHtml = buildWechatHtml(this.note.html, resolveWechatTheme(this.themeId));
+      this.wechatHtml = buildWechatHtml(this.note.html, resolveWechatTheme(this.themeId), undefined, this.articleStyle);
     } catch (error) {
       this.wechatHtml = "";
       this.statusEl.setText(`排版失败：${error instanceof Error ? error.message : String(error)}`);

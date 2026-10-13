@@ -9,12 +9,27 @@ export interface WechatPublishSettings {
   secretId: string;
   defaultAccountId: string;
   themeId: string;
+  /** Default appearance and per-note choices live in this plugin, not in note content. */
+  articleStyle: WechatArticleStyle;
+  noteStyles: Record<string, WechatArticleAppearance>;
   author: string;
   openComment: boolean;
   /** Write wechat_media_id / wechat_draft_at back to the note after a draft is created. */
   recordInNote: boolean;
   /** User-owned accounts. The original server-owned bridge remains in bridgeUrl/secretId. */
   connections: WechatConnection[];
+}
+
+export interface WechatArticleStyle {
+  fontSize?: number;
+  lineHeight?: number;
+  paragraphSpacing?: number;
+  pagePadding?: number;
+}
+
+export interface WechatArticleAppearance {
+  themeId: string;
+  style: WechatArticleStyle;
 }
 
 export interface WechatConnection {
