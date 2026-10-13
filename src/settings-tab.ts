@@ -18,7 +18,7 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
   }
 
   private renderAboutSection(containerEl: HTMLElement): void {
-    containerEl.createEl("h3", { text: "关于" });
+    new Setting(containerEl).setName("关于").setHeading();
     new Setting(containerEl).setName(`当前版本 ${this.plugin.manifest.version}`).setDesc("在 Obsidian 第三方插件中检查并安装更新。");
     for (const [name, label, href] of [
       ["反馈 Bug", "在 GitHub 提交问题", "https://github.com/joeseesun/qiaomu-publish/issues/new"],
@@ -32,13 +32,13 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
 
   private renderPublishSection(containerEl: HTMLElement): void {
     const wechat = this.plugin.settings.wechat;
-    containerEl.createEl("h3", { text: "公众号草稿箱" });
+    new Setting(containerEl).setName("公众号草稿箱").setHeading();
     containerEl.createEl("p", {
       cls: "setting-item-description",
       text: "连接自己的公众号后可发送到草稿箱；不配置连接也能复制公众号格式。不会直接群发。",
     });
     this.renderWechatConnections(containerEl);
-    containerEl.createEl("h4", { text: "自建 Bridge（现有连接）" });
+    new Setting(containerEl).setName("自建 Bridge（现有连接）").setHeading();
     new Setting(containerEl)
       .setName("Bridge 地址")
       .setDesc("例如 https://bridge.example.com；必须是 https。")
@@ -119,7 +119,7 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
       }));
     for (const connection of wechat.connections) {
       const group = containerEl.createDiv({ cls: "qiaomu-wechat-connection" });
-      group.createEl("h4", { text: connection.mode === "direct" ? "直连公众号" : "乔木中转公众号" });
+      new Setting(group).setName(connection.mode === "direct" ? "直连公众号" : "乔木中转公众号").setHeading();
       new Setting(group).setName("名称").addText((input) => input.setValue(connection.name).onChange(async (value) => {
         connection.name = value.trim(); await this.plugin.saveSettings();
       }));

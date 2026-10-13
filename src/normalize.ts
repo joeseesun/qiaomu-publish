@@ -171,7 +171,6 @@ function normalizeCodeBlockMarkup(root: ParentNode) {
     const sign = pre.ownerDocument.createElement('span')
     sign.className = 'mac-sign'
     sign.setAttribute('aria-hidden', 'true')
-    sign.setAttribute('style', 'padding: 10px 14px 0;')
     const svg = new DOMParser().parseFromString(WECHAT_MAC_CODE_SVG, 'image/svg+xml').documentElement
     sign.append(pre.ownerDocument.importNode(svg, true))
 
@@ -705,9 +704,6 @@ function getQuoteDepth(element: HTMLElement) {
 
 function normalizeInlinedQuoteStyles(root: ParentNode) {
   for (const quote of Array.from(root.querySelectorAll<HTMLElement>('blockquote'))) {
-    quote.style.borderTopLeftRadius = '0'
-    quote.style.borderBottomLeftRadius = '0'
-
     const parentQuote = quote.parentElement?.closest('blockquote') as HTMLElement | null
     const sourceColor = parentQuote
       ? readBorderLeftColor(parentQuote)

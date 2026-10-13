@@ -13,8 +13,6 @@ import { QIAOMU_RELAY_CODE, QIAOMU_RELAY_URL } from "./defaults";
 import { resolveArticleAppearance } from "./article-style";
 import type { WechatArticleStyle } from "./types";
 
-const PREVIEW_CSS = `:host{display:block}.frame{max-width:677px;margin:0 auto;padding:16px 0;background:#fff;color:#1a1a1a}img{max-width:100%}`;
-
 export class WechatPublishModal extends Modal {
   private readonly component = new Component();
   private note: RenderedNote | null = null;
@@ -179,13 +177,7 @@ export class WechatPublishModal extends Modal {
       this.wechatHtml = "";
       this.statusEl.setText(`排版失败：${error instanceof Error ? error.message : String(error)}`);
     }
-    this.previewRoot.replaceChildren();
-    const style = document.createElement("style");
-    style.textContent = PREVIEW_CSS;
-    const frame = document.createElement("div");
-    frame.className = "frame";
-    frame.replaceChildren(sanitizeHTMLToDom(this.wechatHtml));
-    this.previewRoot.append(style, frame);
+    this.previewRoot.replaceChildren(sanitizeHTMLToDom(this.wechatHtml));
     this.refreshChecks();
   }
 

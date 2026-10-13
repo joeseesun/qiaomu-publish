@@ -1550,6 +1550,8 @@ ${buildKatexSizingCss()}
 .wechat-export-content h6 { border-left: 0 !important; }
 .wechat-export-content blockquote,
 .wechat-export-content .wechat-callout { border: 1px solid ${tokens.lineColor} !important; }
+.wechat-export-content blockquote { border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; }
+.wechat-export-content img.wechat-sized-image { max-width: 100% !important; }
 `.trim()
 
   return themeCss

@@ -554,7 +554,7 @@ export function normalizeWechatImageFigures(root: ParentNode) {
     const parsed = parseImageAltSyntax(image.getAttribute('alt') || '')
     if (parsed?.width) {
       image.style.width = parsed.width
-      image.style.maxWidth = '100%'
+      image.classList.add('wechat-sized-image')
     }
     if (parsed?.height) {
       image.style.height = parsed.height
