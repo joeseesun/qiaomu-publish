@@ -1,5 +1,6 @@
 import type { QiaomuPublishSettings, WechatPublishSettings } from "./types";
 import { normalizeArticleStyle, normalizeNoteStyles } from "./article-style";
+import { connectionSecretId, isSecretId } from "./secret-storage";
 
 export const QIAOMU_RELAY_URL = "https://wx.qiaomu.ai";
 export const QIAOMU_RELAY_EGRESS_IP = "207.148.115.69";
@@ -46,9 +47,9 @@ export function normalizeWechatSettings(raw: unknown): WechatPublishSettings {
       name: item.name,
       mode: item.mode,
       appId: item.appId,
-      appSecretId: item.appSecretId,
+      appSecretId: isSecretId(item.appSecretId) ? item.appSecretId : connectionSecretId(item.id),
       relayUrl: typeof item.relayUrl === "string" ? item.relayUrl : "",
-      inviteSecretId: typeof item.inviteSecretId === "string" ? item.inviteSecretId : "",
+      inviteSecretId: isSecretId(item.inviteSecretId) ? item.inviteSecretId : "",
     })) : [],
   };
 }

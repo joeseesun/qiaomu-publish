@@ -119,7 +119,10 @@ describe("invited relay", () => {
       return { status: 200, json: { ok: true } };
     });
     const settings: WechatPublishSettings = { bridgeUrl: "", secretId: "", defaultAccountId: "relay:1", themeId: "qiaomu-podcast", articleStyle: {}, noteStyles: {}, author: "", openComment: true, recordInNote: true, connections: [{ id: "relay:1", name: "我的号", mode: "relay", appId: "wx-test", appSecretId: "app-secret", relayUrl: "https://relay.example.com" }] };
-    const app = { secretStorage: { getSecret: (id: string) => id === "app-secret" ? "secret-value" : "" } } as never;
+    const app = { secretStorage: { getSecret: (id: string) => {
+      if (!/^[a-z0-9-]{1,64}$/.test(id)) throw new Error("Invalid secret ID");
+      return id === "app-secret" ? "secret-value" : "";
+    } } } as never;
     const router = new WechatTransportRouter(app, settings);
     await router.listAccounts();
     await router.getDraft("relay:1", "draft-1");

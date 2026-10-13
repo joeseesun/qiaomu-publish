@@ -5,6 +5,7 @@ import { WechatRelayClient, knownRelayEgressIps, relayEgressIps } from "./relay-
 import { WechatTransportRouter } from "./transport-router";
 import { listWechatThemes } from "./export-html";
 import { QIAOMU_RELAY_CODE, QIAOMU_RELAY_URL } from "./defaults";
+import { connectionSecretId, isSecretId, optionalSecret } from "./secret-storage";
 
 export class QiaomuPublishSettingTab extends PluginSettingTab {
   constructor(app: App, private readonly plugin: QiaomuPublishPlugin) { super(app, plugin); }
@@ -107,13 +108,13 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
     new Setting(containerEl).setName("添加公众号连接").setDesc("直连需要当前设备出口 IP 在公众号白名单；乔木中转需要把服务器的固定出口 IP 加入白名单。")
       .addButton((button) => button.setButtonText("直连微信").onClick(async () => {
         const id = `direct:${crypto.randomUUID()}`;
-        wechat.connections.push({ id, name: "新公众号", mode: "direct", appId: "", appSecretId: `qiaomu-wechat-secret-${id}` });
+        wechat.connections.push({ id, name: "新公众号", mode: "direct", appId: "", appSecretId: connectionSecretId(id) });
         wechat.defaultAccountId = id;
         await this.plugin.saveSettings(); this.display();
       }))
       .addButton((button) => button.setButtonText("乔木中转").onClick(async () => {
         const id = `relay:${crypto.randomUUID()}`;
-        wechat.connections.push({ id, name: "新公众号", mode: "relay", appId: "", appSecretId: `qiaomu-wechat-secret-${id}`, relayUrl: QIAOMU_RELAY_URL });
+        wechat.connections.push({ id, name: "新公众号", mode: "relay", appId: "", appSecretId: connectionSecretId(id), relayUrl: QIAOMU_RELAY_URL });
         wechat.defaultAccountId = id;
         await this.plugin.saveSettings(); this.display();
       }));
@@ -160,7 +161,7 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
             await new WechatDirectClient(account, connection.appId, secret).testConnection();
             status.setDesc("连接成功。当前设备出口 IP 已获微信接受。");
           } else {
-            const ips = await new WechatRelayClient(account, connection.appId, secret, this.app.secretStorage.getSecret(connection.inviteSecretId ?? "") || QIAOMU_RELAY_CODE, connection.relayUrl ?? "").testConnection();
+            const ips = await new WechatRelayClient(account, connection.appId, secret, optionalSecret(this.app, connection.inviteSecretId) || QIAOMU_RELAY_CODE, connection.relayUrl ?? "").testConnection();
             status.setDesc(ips.length ? `连接成功。微信已接受中转出口 IP ${ips.join("、")}。` : "连接成功，但中转未返回固定出口 IP。");
           }
         } catch (error) { status.setDesc(`连接失败：${error instanceof Error ? error.message : String(error)}`); }
@@ -172,7 +173,7 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
         wechat.connections = wechat.connections.filter((item) => item.id !== connection.id);
         if (wechat.defaultAccountId === connection.id) wechat.defaultAccountId = "";
         this.app.secretStorage.setSecret(connection.appSecretId, "");
-        if (connection.inviteSecretId) this.app.secretStorage.setSecret(connection.inviteSecretId, "");
+        if (isSecretId(connection.inviteSecretId)) this.app.secretStorage.setSecret(connection.inviteSecretId, "");
         await this.plugin.saveSettings(); this.display();
       }));
     }

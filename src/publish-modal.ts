@@ -12,6 +12,7 @@ import type QiaomuPublishPlugin from "./main";
 import { QIAOMU_RELAY_CODE, QIAOMU_RELAY_URL } from "./defaults";
 import { resolveArticleAppearance } from "./article-style";
 import type { WechatArticleStyle } from "./types";
+import { connectionSecretId } from "./secret-storage";
 
 export class WechatPublishModal extends Modal {
   private readonly component = new Component();
@@ -259,7 +260,7 @@ export class WechatPublishModal extends Modal {
         if (input.mode === "relay") await relay().testConnection();
         else await new WechatDirectClient(account, input.appId, input.appSecret).testConnection();
         const id = `${input.mode}:${crypto.randomUUID()}`;
-        const appSecretId = `qiaomu-wechat-secret-${id}`;
+        const appSecretId = connectionSecretId(id);
         this.app.secretStorage.setSecret(appSecretId, input.appSecret);
         const previousDefault = this.settings.defaultAccountId;
         this.settings.connections.push({ id, name: `我的公众号 ${input.appId.slice(-4)}`, mode: input.mode, appId: input.appId, appSecretId, relayUrl: input.mode === "relay" ? input.relayUrl : undefined });
