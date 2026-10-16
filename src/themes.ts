@@ -29,11 +29,92 @@ function brandTheme(options: {
   swatches: string[]
   css: string
 }): WechatExportTheme {
+  const css = compactCss(options.css)
+  // The strip must show what the article really looks like, so it is read from the css the theme was built with.
+  const painted = /qm-swatch:([#0-9a-f,]+) \*\//i.exec(css)?.[1]?.split(',')
   return {
     ...options,
+    swatches: painted?.length ? painted : options.swatches,
     builtin: true,
-    css: compactCss(options.css),
+    css,
   }
+}
+
+
+const AVAILABLE_FONT = /^(-apple-system|BlinkMacSystemFont|"?Segoe UI"?|"?PingFang SC"?|"?Hiragino Sans GB"?|"?Microsoft YaHei"?|"?Noto Sans CJK SC"?|"?Songti SC"?|STSong|"?Noto Serif CJK SC"?|"?Source Han Serif SC"?|Georgia|"?Times New Roman"?|Arial|"Arial Black"|Impact|"?Helvetica Neue"?|"?Avenir Next"?|Roboto|ui-monospace|SFMono-Regular|Menlo|Consolas|monospace|serif|sans-serif)$/i
+const CJK_SANS = '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC"'
+const CJK_SERIF = '"Songti SC", STSong, "Noto Serif CJK SC", "Source Han Serif SC"'
+
+/** Phones only have system fonts: drop brand faces that never load and make sure Chinese text has a CJK fallback. */
+function systemFontStack(raw: string) {
+  const names = raw.split(/,(?![^"]*"(?:[^"]*"[^"]*")*[^"]*$)/).map(name => name.trim()).filter(Boolean)
+  const kept = names.filter(name => AVAILABLE_FONT.test(name))
+  const serif = kept.some(name => /serif|georgia|times|songti|stsong/i.test(name) && !/sans-serif/i.test(name))
+  const hasCjk = kept.some(name => /PingFang|Hiragino|YaHei|Noto (Sans|Serif) CJK|Songti|STSong|Source Han/i.test(name))
+  const base = kept.filter(name => !/^(sans-serif|serif|monospace)$/i.test(name))
+  const generic = kept.filter(name => /^(sans-serif|serif|monospace)$/i.test(name))
+  if (!hasCjk) base.push(serif ? CJK_SERIF : CJK_SANS)
+  return [...base, ...(generic.length ? generic : [serif ? 'serif' : 'sans-serif'])].join(', ')
+}
+
+function hexChannels(hex: string): [number, number, number] {
+  const value = hex.length === 4 ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}` : hex
+  return [1, 3, 5].map(index => Number.parseInt(value.slice(index, index + 2), 16)) as [number, number, number]
+}
+
+export function contrastRatio(a: string, b: string) {
+  const luminance = (hex: string) => {
+    const [r, g, bl] = hexChannels(hex).map(channel => {
+      const v = channel / 255
+      return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+    }) as [number, number, number]
+    return 0.2126 * r + 0.7152 * g + 0.0722 * bl
+  }
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number]
+  return (hi + 0.05) / (lo + 0.05)
+}
+
+/** The accent, nudged toward ink (or paper on dark pages) until text set in it stays readable (4.5:1). */
+function readableAccent(accent: string, background: string, minimum = 4.5) {
+  if (!/^#[0-9a-f]{6}$/i.test(accent) || !/^#[0-9a-f]{3,6}$/i.test(background)) return accent
+  const target = contrastRatio('#000000', background) >= contrastRatio('#ffffff', background) ? '#000000' : '#ffffff'
+  const from = hexChannels(accent)
+  const to = hexChannels(target)
+  for (let step = 0; step <= 20; step++) {
+    const mixed = `#${from.map((channel, index) => Math.round(channel + (to[index]! - channel) * step * 0.05).toString(16).padStart(2, '0')).join('')}`
+    if (contrastRatio(mixed, background) >= minimum) return mixed
+  }
+  return target
+}
+
+/** Re-tints any hard-coded colour in a rule that falls below 4.5:1 against the rule's own background (or the page). */
+function legibleColors(rule: string, pageBackground: string) {
+  const own = /background:\s*(#[0-9a-f]{6})/i.exec(rule)?.[1] ?? pageBackground
+  return rule.replace(/(^|[;\s])color:\s*(#[0-9a-f]{6})/gi, (_all, lead: string, color: string) => `${lead}color: ${contrastRatio(color, own) >= 4.5 ? color : readableAccent(color, own)}`)
+}
+
+/** WeChat already insets articles by ~16px, so extra side padding is capped to keep the measure comfortable. */
+function fitPadding(padding: string, card: boolean) {
+  const parts = padding.trim().split(/\s+/)
+  const cap = card ? 14 : 8
+  const capped = (value: string | undefined) => {
+    const px = Number.parseFloat(value ?? '0')
+    return Number.isFinite(px) ? `${Math.min(px, cap)}px` : (value ?? '0')
+  }
+  const vertical = (value: string | undefined, max: number) => {
+    const px = Number.parseFloat(value ?? '0')
+    return Number.isFinite(px) ? `${Math.min(px, max)}px` : (value ?? '0')
+  }
+  if (parts.length === 1) return `${vertical(parts[0], 8)} ${capped(parts[0])}`
+  parts[0] = vertical(parts[0], 8)
+  parts[1] = capped(parts[1])
+  if (parts[2]) parts[2] = vertical(parts[2], 16)
+  return parts.join(' ')
+}
+
+function capPx(value: string, max: number) {
+  const px = Number.parseFloat(value)
+  return Number.isFinite(px) && /px$/.test(value) ? `${Math.min(px, max)}px` : value
 }
 
 function buildEditorialCss(options: {
@@ -62,21 +143,27 @@ function buildEditorialCss(options: {
   imageCss?: string
   extraCss?: string
 }) {
+  const card = options.articleBg.toLowerCase() !== options.rootBg.toLowerCase()
+  const text = readableAccent(options.accent, options.articleBg)
+  const bodyFont = systemFontStack(options.bodyFont || '-apple-system, BlinkMacSystemFont, sans-serif')
+  const titleFont = systemFontStack(options.titleFont || options.bodyFont || '-apple-system, BlinkMacSystemFont, sans-serif')
   return compactCss(`
+/* qm-accent:${options.accent}:${options.accentSoft}:${text} */
+/* qm-swatch:${[...new Set([options.rootBg, options.articleBg, options.titleColor, options.accent, options.accentSoft].map(color => color.toLowerCase()))].filter(color => /^#[0-9a-f]{6}$/.test(color)).join(',')} */
 .wechat-export-root {
   background: ${options.rootBg};
 }
 
 .wechat-export-article {
-  padding: ${options.articlePadding || '0 12px'};
+  padding: ${fitPadding(options.articlePadding || '0 8px', card)};
   border-radius: ${options.articleRadius || '0'};
   background: ${options.articleBg};
 }
 
 .wechat-export-title {
   color: ${options.titleColor};
-  font-family: ${options.titleFont || options.bodyFont || 'var(--body-font, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif)'};
-  font-size: ${options.titleSize || '20px'};
+  font-family: ${titleFont};
+  font-size: ${capPx(options.titleSize || '20px', 22)};
   font-weight: ${options.titleWeight || '700'};
   line-height: 1.45;
   letter-spacing: ${options.titleSpacing || '0'};
@@ -85,9 +172,10 @@ function buildEditorialCss(options: {
 
 .wechat-export-content {
   color: ${options.bodyColor};
-  font-family: ${options.bodyFont || 'var(--body-font, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif)'};
+  font-family: ${bodyFont};
   font-size: 16px;
   line-height: 1.82;
+  letter-spacing: 0.03em;
 }
 
 .wechat-export-content h2 {
@@ -95,12 +183,12 @@ function buildEditorialCss(options: {
 }
 
 .wechat-export-content h3 {
-  ${options.h3Css || `color: ${options.accent};`}
+  ${legibleColors(options.h3Css || `color: ${text};`, options.articleBg)}
 }
 
 .wechat-export-content a,
 .wechat-export-content strong {
-  color: ${options.accent};
+  color: ${text};
 }
 
 .wechat-export-content blockquote {
@@ -108,7 +196,7 @@ function buildEditorialCss(options: {
 }
 
 .wechat-export-content code {
-  ${options.codeCss || `color: ${options.accent}; background: ${options.accentSoft};`}
+  ${options.codeCss || `color: ${text}; background: ${options.accentSoft};`}
 }
 
 .wechat-export-content pre {
@@ -144,7 +232,7 @@ export const WECHAT_EXPORT_BUILTIN_THEMES: WechatExportTheme[] = [
     id: DEFAULT_THEME_ID,
     name: '默认正文',
     description: '沿用当前博客正文排版，适合日常快速复制。',
-    swatches: ['#f5f4ed', '#141413', '#c96442', '#faf9f5'],
+    swatches: ['#ffffff', '#2b241c', '#576b95', '#f6f6f6'],
     builtin: true,
     css: '',
   },
@@ -179,7 +267,7 @@ export const WECHAT_EXPORT_BUILTIN_THEMES: WechatExportTheme[] = [
 }
 
 .wechat-export-content {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 400;
   line-height: 1.9;
   letter-spacing: 0.04em;
@@ -191,7 +279,7 @@ export const WECHAT_EXPORT_BUILTIN_THEMES: WechatExportTheme[] = [
   margin: 0;
   padding: 0;
   color: #1a1a1a;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 400;
   line-height: 1.9;
   letter-spacing: 0.04em;
@@ -262,7 +350,7 @@ export const WECHAT_EXPORT_BUILTIN_THEMES: WechatExportTheme[] = [
   font-size: 16px;
   font-weight: 400;
   line-height: 1.8;
-  letter-spacing: 0;
+  letter-spacing: 0.03em;
   text-align: left;
 }
 
@@ -273,7 +361,7 @@ export const WECHAT_EXPORT_BUILTIN_THEMES: WechatExportTheme[] = [
   font-size: 16px;
   font-weight: 400;
   line-height: 1.8;
-  letter-spacing: 0;
+  letter-spacing: 0.03em;
   text-align: left;
 }
 
@@ -1317,18 +1405,18 @@ export const WECHAT_EXPORT_BUILTIN_THEMES: WechatExportTheme[] = [
 }
 
 .wechat-export-content {
-  font-size: 16.5px;
+  font-size: 16px;
   line-height: 1.9;
-  letter-spacing: 0;
+  letter-spacing: 0.03em;
   color: #252525;
 }
 
 .wechat-export-content > p {
   margin: 0;
   color: #252525;
-  font-size: 16.5px;
+  font-size: 16px;
   line-height: 1.9;
-  letter-spacing: 0;
+  letter-spacing: 0.03em;
 }
 
 .wechat-export-content > p + p {
@@ -1499,4 +1587,10 @@ export function serializeWechatExportThemeConfig(config: WechatExportThemeConfig
     defaultThemeId: normalized.defaultThemeId,
     themes: normalized.themes,
   })
+}
+
+/** Accent colours a theme was built from (written by buildEditorialCss); the default theme uses the base palette's link and accent. */
+export function themeAccents(theme: WechatExportTheme): { accents: string[]; soft?: string } {
+  const match = /\/\* qm-accent:(#[0-9a-f]{3,8}):(#[0-9a-f]{3,8})(?::(#[0-9a-f]{3,8}))? \*\//i.exec(theme.css)
+  return match ? { accents: [...new Set([match[1]!, match[3] ?? match[1]!])], soft: match[2]! } : { accents: ['#576b95', '#c96442'] }
 }

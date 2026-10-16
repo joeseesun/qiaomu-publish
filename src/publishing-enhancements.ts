@@ -547,14 +547,14 @@ function wrapImageWithFigure(image: HTMLImageElement, caption: string) {
   figure.appendChild(figcaption)
 }
 
-export function normalizeWechatImageFigures(root: ParentNode) {
+export function normalizeWechatImageFigures(root: ParentNode, captions = true) {
   for (const image of Array.from(root.querySelectorAll<HTMLImageElement>('img'))) {
     if (isExcluded(image) || image.closest('figure, table.wechat-image-grid')) continue
 
     const parsed = parseImageAltSyntax(image.getAttribute('alt') || '')
     if (parsed?.width) {
       image.style.width = parsed.width
-      image.style.maxWidth = '100%'
+      image.classList.add('wechat-sized-image')
     }
     if (parsed?.height) {
       image.style.height = parsed.height
@@ -562,7 +562,7 @@ export function normalizeWechatImageFigures(root: ParentNode) {
 
     const explicitCaption = image.getAttribute('data-caption') || image.getAttribute('title') || ''
     const caption = explicitCaption.trim() || parsed?.caption || ''
-    if (caption) wrapImageWithFigure(image, caption)
+    if (caption && captions) wrapImageWithFigure(image, caption)
   }
 }
 

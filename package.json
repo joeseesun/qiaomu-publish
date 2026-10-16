@@ -1,6 +1,6 @@
 {
   "name": "qiaomu-publish",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Preview and publish Obsidian notes as WeChat Official Account drafts.",
   "type": "module",
   "main": "main.js",
@@ -11,7 +11,11 @@
     "test": "vitest run",
     "check": "npm run typecheck && npm run test && npm run build"
   },
-  "keywords": ["obsidian", "wechat", "publish"],
+  "keywords": [
+    "obsidian",
+    "wechat",
+    "publish"
+  ],
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^24.10.0",
@@ -20,5 +24,8 @@
     "obsidian": "^1.13.0",
     "typescript": "^5.8.3",
     "vitest": "^4.0.0"
+  },
+  "dependencies": {
+    "highlight.js": "^11.11.1"
   }
 }

@@ -1,4 +1,11 @@
 import type { QiaomuPublishSettings, WechatPublishSettings } from "./types";
+import { normalizeArticleStyle, normalizeNoteStyles } from "./article-style";
+import { DEFAULT_COVER_STYLE, normalizeCoverStyle } from "./title-cover";
+import { connectionSecretId, isSecretId } from "./secret-storage";
+
+export const QIAOMU_RELAY_URL = "https://wx.qiaomu.ai";
+export const QIAOMU_RELAY_EGRESS_IP = "207.148.115.69";
+export const QIAOMU_RELAY_CODE = "qiaomu";
 
 export const DEFAULT_SETTINGS: QiaomuPublishSettings = {
   schemaVersion: 1,
@@ -7,6 +14,9 @@ export const DEFAULT_SETTINGS: QiaomuPublishSettings = {
     secretId: "qiaomu-publish-wechat-bridge-token",
     defaultAccountId: "",
     themeId: "qiaomu-podcast",
+    articleStyle: {},
+    noteStyles: {},
+    cover: DEFAULT_COVER_STYLE,
     author: "",
     openComment: true,
     recordInNote: true,
@@ -29,6 +39,9 @@ export function normalizeWechatSettings(raw: unknown): WechatPublishSettings {
     secretId: text(data.secretId, defaults.secretId) || defaults.secretId,
     defaultAccountId: text(data.defaultAccountId, defaults.defaultAccountId),
     themeId: text(data.themeId, defaults.themeId) || defaults.themeId,
+    articleStyle: normalizeArticleStyle(data.articleStyle),
+    noteStyles: normalizeNoteStyles(data.noteStyles),
+    cover: normalizeCoverStyle(data.cover),
     author: text(data.author, defaults.author),
     openComment: flag(data.openComment, defaults.openComment),
     recordInNote: flag(data.recordInNote, defaults.recordInNote),
@@ -37,9 +50,9 @@ export function normalizeWechatSettings(raw: unknown): WechatPublishSettings {
       name: item.name,
       mode: item.mode,
       appId: item.appId,
-      appSecretId: item.appSecretId,
+      appSecretId: isSecretId(item.appSecretId) ? item.appSecretId : connectionSecretId(item.id),
       relayUrl: typeof item.relayUrl === "string" ? item.relayUrl : "",
-      inviteSecretId: typeof item.inviteSecretId === "string" ? item.inviteSecretId : "",
+      inviteSecretId: isSecretId(item.inviteSecretId) ? item.inviteSecretId : "",
     })) : [],
   };
 }

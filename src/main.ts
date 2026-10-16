@@ -1,17 +1,31 @@
-import { Menu, normalizePath, Notice, Platform, Plugin, TAbstractFile, TFile } from "obsidian";
+import { Menu, type Modal, normalizePath, Notice, Platform, Plugin, TAbstractFile, TFile } from "obsidian";
 import { DEFAULT_SETTINGS, legacyAgentSettings, normalizeSettings } from "./defaults";
 import { QiaomuPublishSettingTab } from "./settings-tab";
-import type { QiaomuPublishSettings } from "./types";
+import type { QiaomuPublishSettings, WechatArticleAppearance } from "./types";
 import { WechatPublishModal } from "./publish-modal";
 import { WechatPreviewView, WECHAT_PREVIEW_VIEW } from "./preview-view";
 
 export default class QiaomuPublishPlugin extends Plugin {
   override settings: QiaomuPublishSettings = normalizeSettings(DEFAULT_SETTINGS);
+  private saveQueue: Promise<void> = Promise.resolve();
+  private appearanceListeners = new Set<() => void>();
+  private modals = new Set<Modal>();
 
   override async onload(): Promise<void> {
     await this.loadSettings();
 
     this.registerView(WECHAT_PREVIEW_VIEW, (leaf) => new WechatPreviewView(leaf, this));
+    this.registerEvent(this.app.vault.on("rename", (file, oldPath) => {
+      const styles = this.settings.wechat.noteStyles;
+      let changed = false;
+      for (const path of Object.keys(styles)) {
+        if (path !== oldPath && !path.startsWith(`${oldPath}/`)) continue;
+        styles[`${file.path}${path.slice(oldPath.length)}`] = styles[path]!;
+        delete styles[path];
+        changed = true;
+      }
+      if (changed) void this.saveSettings().catch(() => new Notice("排版设置保存失败，请在预览中重试保存"));
+    }));
     this.addSettingTab(new QiaomuPublishSettingTab(this.app, this));
     this.addRibbonIcon("smartphone", "预览公众号排版", () => {
       const file = this.app.workspace.getActiveFile();
@@ -49,11 +63,53 @@ export default class QiaomuPublishPlugin extends Plugin {
   }
 
   async saveSettings(): Promise<void> {
-    await this.saveData(this.settings);
+    const snapshot = JSON.parse(JSON.stringify(this.settings)) as QiaomuPublishSettings;
+    for (const listener of this.appearanceListeners) listener();
+    const task = this.saveQueue.catch(() => {}).then(() => this.saveData(snapshot));
+    this.saveQueue = task;
+    await task;
+  }
+
+  onAppearanceChange(listener: () => void): () => void {
+    this.appearanceListeners.add(listener);
+    return () => this.appearanceListeners.delete(listener);
+  }
+
+  async saveNoteAppearance(path: string, appearance: WechatArticleAppearance | null): Promise<void> {
+    if (appearance) this.settings.wechat.noteStyles[path] = { themeId: appearance.themeId, style: { ...appearance.style } };
+    else delete this.settings.wechat.noteStyles[path];
+    await this.saveSettings();
+  }
+
+  async setDefaultAppearance(appearance: WechatArticleAppearance): Promise<void> {
+    this.settings.wechat.themeId = appearance.themeId;
+    this.settings.wechat.articleStyle = { ...appearance.style };
+    await this.saveSettings();
+  }
+
+  /** Opens this plugin's page in Obsidian settings (the host has no documented API for it). */
+  openSettings(): void {
+    const setting = (this.app as unknown as { setting?: { open(): void; openTabById(id: string): void } }).setting;
+    if (!setting) { new Notice("请在 设置 → 第三方插件 → Qiaomu Publish 中管理公众号连接"); return; }
+    setting.open();
+    setting.openTabById(this.manifest.id);
   }
 
   openWechatPublish(file: TFile): void {
-    new WechatPublishModal(this.app, file, this.settings.wechat).open();
+    this.showModal(new WechatPublishModal(this.app, file, this));
+  }
+
+  showModal(modal: Modal): void {
+    const close = modal.onClose.bind(modal);
+    modal.onClose = () => { this.modals.delete(modal); close(); };
+    this.modals.add(modal);
+    modal.open();
+  }
+
+  override onunload(): void {
+    for (const modal of this.modals) modal.close();
+    this.modals.clear();
+    this.appearanceListeners.clear();
   }
 
   async openWechatPreview(file: TFile): Promise<void> {

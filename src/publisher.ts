@@ -1,3 +1,5 @@
+import { DEFAULT_COVER_STYLE, renderTitleCover } from "./title-cover";
+import type { WechatCoverStyle } from "./types";
 import { type App, getLinkpath, TFile } from "obsidian";
 import type { ArticleImage, RenderedNote } from "./render-note";
 import { finalizeWechatImages } from "./export-html";
@@ -13,6 +15,8 @@ export interface DraftMeta {
   sourceUrl: string;
   /** Frontmatter cover: vault link/path or http(s) URL. Empty → first article image. */
   cover: string;
+  /** Big text on the generated cover. Empty follows the title; the two are independent once set. */
+  coverText: string;
   openComment: boolean;
 }
 
@@ -43,6 +47,7 @@ export function metaFromFrontmatter(frontmatter: Record<string, unknown>, title:
     digest: stringField(frontmatter, "digest", "摘要", "description", "summary"),
     sourceUrl: stringField(frontmatter, "source_url", "原文链接", "url"),
     cover: stringField(frontmatter, "cover", "封面", "image").replace(/^!?\[\[(.+?)(?:\|.*)?\]\]$/, "$1"),
+    coverText: stringField(frontmatter, "cover_text", "封面文字"),
     openComment: defaults.openComment,
   };
 }
@@ -53,6 +58,7 @@ export function resolveCover(app: App, sourcePath: string, meta: DraftMeta, imag
     if (/^https?:\/\//i.test(meta.cover)) return { kind: "url", url: meta.cover };
     const file = app.metadataCache.getFirstLinkpathDest(getLinkpath(meta.cover), sourcePath);
     if (file instanceof TFile) return { kind: "image", image: { id: "cover", kind: "vault", name: file.name, file } };
+    return null;
   }
   const first = images[0];
   if (!first) return null;
@@ -102,9 +108,16 @@ export async function publishDraft(options: {
   wechatHtml: string;
   meta: DraftMeta;
   signal?: AbortSignal;
+  existingMediaId?: string;
+  cover?: WechatCoverStyle;
   onProgress?: PublishProgress;
 }): Promise<{ mediaId: string; accountName: string }> {
-  const { app, client, note, meta, onProgress } = options;
+  const { app, client, note, onProgress } = options;
+  const meta = { ...options.meta };
+  const coverStyle = { ...(options.cover ?? DEFAULT_COVER_STYLE) };
+  const cover = resolveCover(app, options.file.path, meta, note.images);
+  if (meta.cover && !cover) throw new Error(`找不到指定封面：${meta.cover}`);
+  if (options.signal?.aborted) throw new Error("已取消");
   const uploadable = note.images.filter((image) => image.kind !== "remote");
   const sources = new Map<string, string>();
   for (const [index, image] of uploadable.entries()) {
@@ -116,11 +129,16 @@ export async function publishDraft(options: {
     sources.set(image.id, result.url);
   }
 
-  const cover = resolveCover(app, options.file.path, meta, note.images);
-  if (!cover) throw new Error("没有封面：请在属性中设置 cover，或在正文中放一张图片");
   let thumbMediaId = "";
   let coverUrl = "";
-  if (cover.kind === "url") {
+  if (!cover) {
+    onProgress?.("生成标题封面");
+    const data = await renderTitleCover(meta.coverText || meta.title, coverStyle);
+    if (options.signal?.aborted) throw new Error("已取消");
+    const result = await client.uploadImage(meta.accountId, "cover", "title-cover.jpg", "image/jpeg", data);
+    if (!result.media_id) throw new Error("标题封面上传没有返回 media_id");
+    thumbMediaId = result.media_id;
+  } else if (cover.kind === "url") {
     coverUrl = cover.url;
   } else {
     if (options.signal?.aborted) throw new Error("已取消");
@@ -133,7 +151,7 @@ export async function publishDraft(options: {
 
   if (options.signal?.aborted) throw new Error("已取消");
   onProgress?.("创建草稿");
-  const draft = await client.createDraft({
+  const body = {
     account_id: meta.accountId,
     title: meta.title,
     content_html: finalizeWechatImages(options.wechatHtml, sources),
@@ -144,7 +162,8 @@ export async function publishDraft(options: {
     thumb_media_id: thumbMediaId || undefined,
     need_open_comment: meta.openComment,
     publish_now: false,
-  });
+  } as const;
+  const draft = options.existingMediaId ? await client.updateDraft(options.existingMediaId, body) : await client.createDraft(body);
   return { mediaId: draft.media_id, accountName: draft.account?.name ?? meta.accountId };
 }
 
