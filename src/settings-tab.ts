@@ -66,7 +66,7 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
   private head(parent: HTMLElement, title: string, hint: string): HTMLElement {
     const head = parent.createDiv({ cls: "qp-head" });
     const text = head.createDiv({ cls: "qp-head-text" });
-    text.createEl("h3", { text: title });
+    new Setting(text).setName(title).setHeading();
     text.createEl("p", { text: hint });
     return head.createDiv({ cls: "qp-head-actions" });
   }

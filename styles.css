@@ -214,7 +214,9 @@
 .qp-section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .qp-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
 .qp-head-text { min-width: 0; }
-.qiaomu-publish-settings .qp-head h3 { margin: 0; padding: 0; font-size: 15px; font-weight: 600; line-height: 22px; color: var(--qp-ink); }
+.qiaomu-publish-settings .qp-head .setting-item { margin: 0; padding: 0; border: 0; }
+.qiaomu-publish-settings .qp-head .setting-item-info { margin: 0; }
+.qiaomu-publish-settings .qp-head .setting-item-name { margin: 0; padding: 0; font-size: 15px; font-weight: 600; line-height: 22px; color: var(--qp-ink); }
 .qp-head p { margin: 4px 0 0; color: var(--qp-muted); font-size: 13px; line-height: 1.6; }
 .qp-head-actions { display: flex; flex: none; gap: 6px; }
 :is(.qiaomu-publish-settings, .qp-modal) button.qp-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px; height: auto; padding: 5px 12px; border: 0; border-radius: 8px; background: transparent; box-shadow: 0 0 0 1px var(--qp-line); color: var(--qp-ink); font-size: 13px; cursor: pointer; }
