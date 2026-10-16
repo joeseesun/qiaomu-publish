@@ -20,7 +20,7 @@ const safeName = (title: string) => title.replace(/[\\/:*?"<>|]+/g, " ").trim() 
 
 /** A standalone page that keeps the inlined WeChat styles, so it opens the same anywhere. */
 export async function exportHtmlFile(app: App, title: string, html: string, images: ArticleImage[]): Promise<string> {
-  const body = await embedWechatImages(app, html, images);
+  const body = await embedWechatImages(app, html, images, true);
   const escaped = title.replace(/[&<>"]/g, (char) => `&#${char.charCodeAt(0)};`);
   const page = `<!doctype html>\n<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escaped}</title></head><body style="margin:0">\n${body}\n</body></html>\n`;
   const name = `${safeName(title)}.html`;
@@ -30,17 +30,21 @@ export async function exportHtmlFile(app: App, title: string, html: string, imag
 
 /** Lays the article out offscreen at WeChat width, then rasterizes it through an SVG foreignObject. */
 export async function exportLongImage(app: App, title: string, html: string, images: ArticleImage[]): Promise<{ name: string; reduced: boolean }> {
-  const embedded = await embedWechatImages(app, html, images);
+  const embedded = await embedWechatImages(app, html, images, true);
   const host = activeDocument.body.createDiv();
   host.setCssProps({ position: "fixed", left: "-99999px", top: "0", width: `${LONG_IMAGE_WIDTH}px` });
   const stage = host.createDiv();
   stage.append(sanitizeHTMLToDom(embedded));
   const root = stage.querySelector<HTMLElement>(".wechat-export-root");
   const background = root ? getComputedStyle(root).backgroundColor : "#ffffff";
-  await Promise.all(Array.from(stage.querySelectorAll("img")).map((image) => image.decode().catch(() => undefined)));
-  const height = Math.ceil(stage.scrollHeight);
-  const serialized = new XMLSerializer().serializeToString(stage);
-  host.remove();
+  let height: number;
+  let serialized: string;
+  try {
+    await Promise.all(Array.from(stage.querySelectorAll("img")).map((image) => image.decode()));
+    await host.ownerDocument.fonts.ready;
+    height = Math.max(1, Math.ceil(stage.scrollHeight));
+    serialized = new XMLSerializer().serializeToString(stage);
+  } finally { host.remove(); }
 
   const scale = Math.min(2, MAX_CANVAS_EDGE / height);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${LONG_IMAGE_WIDTH}" height="${height}"><foreignObject width="100%" height="100%">${serialized}</foreignObject></svg>`;

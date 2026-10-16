@@ -58,6 +58,7 @@ export function resolveCover(app: App, sourcePath: string, meta: DraftMeta, imag
     if (/^https?:\/\//i.test(meta.cover)) return { kind: "url", url: meta.cover };
     const file = app.metadataCache.getFirstLinkpathDest(getLinkpath(meta.cover), sourcePath);
     if (file instanceof TFile) return { kind: "image", image: { id: "cover", kind: "vault", name: file.name, file } };
+    return null;
   }
   const first = images[0];
   if (!first) return null;
@@ -111,7 +112,12 @@ export async function publishDraft(options: {
   cover?: WechatCoverStyle;
   onProgress?: PublishProgress;
 }): Promise<{ mediaId: string; accountName: string }> {
-  const { app, client, note, meta, onProgress } = options;
+  const { app, client, note, onProgress } = options;
+  const meta = { ...options.meta };
+  const coverStyle = { ...(options.cover ?? DEFAULT_COVER_STYLE) };
+  const cover = resolveCover(app, options.file.path, meta, note.images);
+  if (meta.cover && !cover) throw new Error(`找不到指定封面：${meta.cover}`);
+  if (options.signal?.aborted) throw new Error("已取消");
   const uploadable = note.images.filter((image) => image.kind !== "remote");
   const sources = new Map<string, string>();
   for (const [index, image] of uploadable.entries()) {
@@ -123,13 +129,13 @@ export async function publishDraft(options: {
     sources.set(image.id, result.url);
   }
 
-  const cover = resolveCover(app, options.file.path, meta, note.images);
-  if (meta.cover && !cover) throw new Error(`找不到指定封面：${meta.cover}`);
   let thumbMediaId = "";
   let coverUrl = "";
   if (!cover) {
     onProgress?.("生成标题封面");
-    const result = await client.uploadImage(meta.accountId, "cover", "title-cover.jpg", "image/jpeg", await renderTitleCover(meta.coverText || meta.title, options.cover ?? DEFAULT_COVER_STYLE));
+    const data = await renderTitleCover(meta.coverText || meta.title, coverStyle);
+    if (options.signal?.aborted) throw new Error("已取消");
+    const result = await client.uploadImage(meta.accountId, "cover", "title-cover.jpg", "image/jpeg", data);
     if (!result.media_id) throw new Error("标题封面上传没有返回 media_id");
     thumbMediaId = result.media_id;
   } else if (cover.kind === "url") {

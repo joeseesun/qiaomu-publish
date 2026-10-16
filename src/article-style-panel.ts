@@ -40,8 +40,8 @@ export class ArticleStylePanel {
     const header = this.el.createDiv({ cls: "qiaomu-wechat-style-header" });
     header.createEl("strong", { text: text.title });
     const close = header.createEl("button", { cls: "qiaomu-wechat-icon-button", attr: { type: "button", "data-qm-tip": text.close } });
-    setName(close, text.close);
     setIcon(close, "x");
+    setName(close, text.close);
     close.addEventListener("click", options.close);
     this.el.createEl("p", { cls: "qiaomu-wechat-style-scope", text: text.scope });
 
@@ -91,8 +91,8 @@ export class ArticleStylePanel {
     tools.createSpan({ cls: "qiaomu-wechat-divider", attr: { "aria-hidden": "true" } });
     this.color = new CustomColor(tools, { name: text.primaryColor, onCommit: (hex) => this.commit((style) => { style.primaryColor = hex; }) });
     this.colorReset = tools.createEl("button", { cls: "qiaomu-wechat-icon-button", attr: { type: "button", "data-qm-tip": text.primaryReset } });
-    setName(this.colorReset, text.primaryReset);
     setIcon(this.colorReset, "rotate-ccw");
+    setName(this.colorReset, text.primaryReset);
     this.colorReset.addEventListener("click", () => this.commit((style) => { delete style.primaryColor; }));
     body.createEl("p", { cls: "qiaomu-wechat-style-hint", text: text.primaryHint });
 

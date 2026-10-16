@@ -34,7 +34,7 @@ export const DEFAULT_COVER_STYLE: WechatCoverStyle = { background: "navy", font:
 
 /** A preset id keeps its tuned stack; any other name is used as an installed family with a Chinese fallback. */
 export function coverFont(font: string): { stack: string; weight: number } {
-  const preset = COVER_FONTS[font];
+  const preset = Object.hasOwn(COVER_FONTS, font) ? COVER_FONTS[font] : undefined;
   if (preset) return preset;
   const family = font.replace(/["\\]/g, "");
   return { stack: `"${family}", ${COVER_FONTS.sans!.stack}`, weight: 700 };
@@ -105,7 +105,7 @@ export function drawTitleCover(context: CanvasRenderingContext2D, title: string,
 
   // A chosen size is respected (up to four lines); automatic size shrinks until three lines fit.
   const candidates = style.size ? [style.size] : SIZES;
-  const maxLines = style.size ? 4 : 3;
+  const maxLines = style.size ? Math.min(4, Math.max(1, Math.floor((COVER_HEIGHT - 48) / Math.round(style.size * 1.38)))) : 3;
   let lines: string[] = [];
   let size = candidates[candidates.length - 1]!;
   for (const candidate of candidates) {

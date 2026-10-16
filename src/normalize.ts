@@ -1,6 +1,5 @@
 // Ported from qmblog lib/wechat-copy.ts and lib/code-highlight.ts (same author).
-// Only the framework-free DOM normalization is kept: no juice, html2pdf, KaTeX or
-// highlight.js, so the Obsidian bundle stays small. Keep in sync with the blog.
+// Framework-free normalization; selected highlight.js languages supply code colours.
 import {
   normalizeWechatExternalLinkFootnotes,
   normalizeWechatImageFigures,

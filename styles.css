@@ -395,3 +395,4 @@ body:has(.workspace-leaf.mod-active > .workspace-leaf-content:is(
 )) .status-bar {
   display: none;
 }
+.qiaomu-wechat-preview-loading { padding: 48px 0; text-align: center; color: var(--text-muted); font-size: 13px; }

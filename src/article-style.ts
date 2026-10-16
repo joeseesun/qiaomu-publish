@@ -26,7 +26,7 @@ export function normalizeArticleStyle(raw: unknown): WechatArticleStyle {
   const data = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
   const style: WechatArticleStyle = {};
   if (typeof data.primaryColor === "string" && /^#[0-9a-f]{6}$/i.test(data.primaryColor)) style.primaryColor = data.primaryColor.toLowerCase();
-  if (typeof data.fontFamily === "string" && data.fontFamily in FONT_FAMILIES) style.fontFamily = data.fontFamily as WechatFontFamily;
+  if (typeof data.fontFamily === "string" && Object.hasOwn(FONT_FAMILIES, data.fontFamily)) style.fontFamily = data.fontFamily as WechatFontFamily;
   if (typeof data.codeTheme === "string" && CODE_THEMES.some((item) => item.id === data.codeTheme)) style.codeTheme = data.codeTheme;
   for (const key of BOOLEAN_STYLE_KEYS) if (typeof data[key] === "boolean") style[key] = data[key];
   if (typeof data.customCss === "string" && data.customCss.trim()) style.customCss = data.customCss.slice(0, MAX_CUSTOM_CSS);

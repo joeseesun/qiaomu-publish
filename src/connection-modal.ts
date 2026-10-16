@@ -18,6 +18,7 @@ export class ConnectionModal extends Modal {
   private relayBox!: HTMLElement;
   private busy = false;
   private pendingDelete = false;
+  private closed = false;
 
   constructor(app: App, private readonly plugin: QiaomuPublishPlugin, private readonly existing: WechatConnection | null, private readonly onDone: () => void) {
     super(app);
@@ -87,7 +88,7 @@ export class ConnectionModal extends Modal {
     this.primary.addEventListener("click", () => void this.save(true));
   }
 
-  override onClose(): void { this.contentEl.empty(); }
+  override onClose(): void { this.closed = true; this.contentEl.empty(); }
 
   private showIps(ips: string[]): void {
     this.ips.empty();
@@ -102,6 +103,7 @@ export class ConnectionModal extends Modal {
     this.primary.disabled = busy;
     this.forceSave.disabled = busy;
     this.status.setText(message);
+    this.contentEl?.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input, select").forEach((input) => { input.disabled = busy; });
   }
 
   private async test(): Promise<void> {
@@ -117,6 +119,7 @@ export class ConnectionModal extends Modal {
     this.setBusy(true, test ? "正在检查连接…" : "正在保存…");
     try {
       if (test) await this.test();
+      if (this.closed) return;
       const wechat = this.plugin.settings.wechat;
       const previous = JSON.parse(JSON.stringify({ connections: wechat.connections, defaultAccountId: wechat.defaultAccountId })) as { connections: WechatConnection[]; defaultAccountId: string };
       const id = this.existing?.id ?? `${this.draft.mode}:${crypto.randomUUID()}`;
@@ -149,15 +152,29 @@ export class ConnectionModal extends Modal {
   }
 
   private async remove(button: HTMLButtonElement): Promise<void> {
-    if (!this.existing) return;
+    if (!this.existing || this.busy) return;
     if (!this.pendingDelete) { this.pendingDelete = true; button.setText("确认移除"); this.status.setText("再点一次确认移除；对应的 AppSecret 也会从本机删除。"); return; }
     const wechat = this.plugin.settings.wechat;
+    const previous = { connections: [...wechat.connections], defaultAccountId: wechat.defaultAccountId };
+    this.setBusy(true, "正在移除…");
+    button.disabled = true;
+    const secretIds = [this.existing.appSecretId, this.existing.inviteSecretId].filter(isSecretId);
+    const secrets = secretIds.map((id) => [id, this.app.secretStorage.getSecret(id) ?? ""] as const);
+    try {
     wechat.connections = wechat.connections.filter((item) => item.id !== this.existing!.id);
     if (wechat.defaultAccountId === this.existing.id) wechat.defaultAccountId = wechat.connections[0]?.id ?? "";
-    this.app.secretStorage.setSecret(this.existing.appSecretId, "");
-    if (isSecretId(this.existing.inviteSecretId)) this.app.secretStorage.setSecret(this.existing.inviteSecretId, "");
+    for (const [id] of secrets) {
+      if (!wechat.connections.some((item) => item.appSecretId === id || item.inviteSecretId === id) && wechat.secretId !== id) this.app.secretStorage.setSecret(id, "");
+    }
     await this.plugin.saveSettings();
     this.onDone();
     this.close();
+    } catch (error) {
+      wechat.connections = previous.connections;
+      wechat.defaultAccountId = previous.defaultAccountId;
+      for (const [id, value] of secrets) this.app.secretStorage.setSecret(id, value);
+      this.setBusy(false, `移除失败：${error instanceof Error ? error.message : String(error)}`);
+      button.disabled = false;
+    }
   }
 }

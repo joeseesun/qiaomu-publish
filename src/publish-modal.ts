@@ -191,10 +191,9 @@ export class WechatPublishModal extends Modal {
   }
 
   private showPreviewPlaceholder(): void {
-    const hint = this.previewRoot.ownerDocument.createElement("div");
+    const hint = this.paper.parentElement!.createDiv({ cls: "qiaomu-wechat-preview-loading" });
     hint.textContent = "正在排版预览…";
-    hint.style.cssText = "padding:48px 0;text-align:center;color:#999;font:13px -apple-system,'PingFang SC',sans-serif";
-    this.previewRoot.replaceChildren(hint);
+    this.previewRoot.replaceChildren();
   }
 
   private renderPreviewSoon(delay = 90): void {
@@ -233,6 +232,7 @@ export class WechatPublishModal extends Modal {
 
   private renderPreview(): void {
     if (!this.note) return;
+    this.paper.parentElement?.querySelector(".qiaomu-wechat-preview-loading")?.remove();
     try {
       this.wechatHtml = buildWechatHtml(this.note.html, resolveWechatTheme(this.themeId), undefined, this.articleStyle);
     } catch (error) {
@@ -326,11 +326,13 @@ export class WechatPublishModal extends Modal {
     })());
     connectButton.addEventListener("click", () => void (async () => {
       connectButton.disabled = true;
+      panel.inert = true;
       status.setText("正在检查公众号连接…");
       try {
         if (!input.appId || !input.appSecret) throw new Error("请填写 AppID 和 AppSecret");
         if (input.mode === "relay") await relay().testConnection();
         else await new WechatDirectClient(account, input.appId, input.appSecret).testConnection();
+        if (!this.contentEl.isConnected) return;
         const id = `${input.mode}:${crypto.randomUUID()}`;
         const appSecretId = connectionSecretId(id);
         this.app.secretStorage.setSecret(appSecretId, input.appSecret);
@@ -351,7 +353,7 @@ export class WechatPublishModal extends Modal {
         this.contentEl.empty();
         this.renderForm();
       } catch (error) { status.setText(`连接失败：${error instanceof Error ? error.message : String(error)}`); }
-      finally { connectButton.disabled = false; }
+      finally { connectButton.disabled = false; panel.inert = false; }
     })());
   }
 
@@ -375,11 +377,15 @@ export class WechatPublishModal extends Modal {
 
   private setBusy(busy: boolean, message = ""): void {
     this.busy = busy;
+    const body = this.contentEl.querySelector<HTMLElement>(".qiaomu-wechat-body");
+    if (body) body.inert = busy;
     this.statusEl.setText(message);
     this.refreshChecks();
   }
 
   private async copy(): Promise<void> {
+    if (this.busy) return;
+    this.flushPreview();
     if (!this.note || !this.wechatHtml) return;
     this.setBusy(true, "正在准备复制…");
     try {
@@ -392,13 +398,21 @@ export class WechatPublishModal extends Modal {
 
   private async publish(): Promise<void> {
     if (this.busy || !this.note || !this.meta || !this.client) return;
+    this.flushPreview();
+    this.refreshChecks();
+    if (this.publishButton.disabled) return;
+    const meta = { ...this.meta };
+    const html = this.wechatHtml;
+    const cover = { ...this.settings.cover };
+    const recordInNote = this.settings.recordInNote;
+    const existing = this.draftAction === "update" ? this.existingMediaId() : "";
+    const mediaId = existing && this.client.canUpdateDraft(meta.accountId) ? existing : "";
     this.abort = new AbortController();
     this.setBusy(true, "准备发送…");
     try {
-      const mediaId = this.draftAction === "update" ? this.existingMediaId() : "";
-      if (mediaId && this.client.canUpdateDraft(this.meta.accountId)) {
+      if (mediaId) {
         try {
-          await this.client.getDraft(this.meta.accountId, mediaId);
+          await this.client.getDraft(meta.accountId, mediaId);
         } catch (error) {
           throw new Error(`无法确认原草稿：${error instanceof Error ? error.message : String(error)}。可选择「另建一篇草稿」后重试。`);
         }
@@ -408,16 +422,16 @@ export class WechatPublishModal extends Modal {
         client: this.client,
         note: this.note,
         file: this.file,
-        wechatHtml: this.wechatHtml,
-        meta: this.meta,
-        existingMediaId: mediaId && this.client.canUpdateDraft(this.meta.accountId) ? mediaId : undefined,
+        wechatHtml: html,
+        meta,
+        existingMediaId: mediaId || undefined,
         signal: this.abort.signal,
-        cover: this.settings.cover,
+        cover,
         onProgress: (message) => { if (this.contentEl.isConnected) this.statusEl.setText(message); },
       });
       let saved = true;
-      if (this.settings.recordInNote) {
-        try { await recordDraft(this.app, this.file, this.meta.accountId, result.mediaId); }
+      if (recordInNote) {
+        try { await recordDraft(this.app, this.file, meta.accountId, result.mediaId); }
         catch { saved = false; }
       }
       new Notice(saved ? `已${mediaId ? "更新" : "发送"}到「${result.accountName}」草稿箱，请在公众号后台检查后发布。` : `草稿已发送到「${result.accountName}」，但没能写回笔记记录，请到公众号后台确认。`);
@@ -427,5 +441,12 @@ export class WechatPublishModal extends Modal {
     } finally {
       this.abort = null;
     }
+  }
+
+  private flushPreview(): void {
+    if (this.previewTimer === null) return;
+    window.clearTimeout(this.previewTimer);
+    this.previewTimer = null;
+    this.renderPreview();
   }
 }

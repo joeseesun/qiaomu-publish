@@ -123,7 +123,7 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
   }
 
   private openConnection(connection: WechatConnection | null): void {
-    new ConnectionModal(this.app, this.plugin, connection, () => this.display()).open();
+    this.plugin.showModal(new ConnectionModal(this.app, this.plugin, connection, () => this.display()));
   }
 
   private renderPublishDefaults(body: HTMLElement): void {
@@ -251,6 +251,6 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
       links.createEl("a", { text: label, href, attr: EXTERNAL });
     }
     footer.createEl("p", { text: "只有你主动发送草稿时，正文与图片才会发给你选择的连接。AppSecret 和 Bridge 令牌保存在本机 SecretStorage，不写入同步的插件数据；乔木共享接入码随插件公开，不是私密凭据。" });
-    footer.createEl("p", { text: "© 向阳乔木 · MIT 许可 · 第三方许可见插件目录 THIRD_PARTY_NOTICES.md" });
+    footer.createEl("p", { text: "© 向阳乔木 · MIT 许可 · 第三方许可见 GitHub 的 THIRD_PARTY_NOTICES.md" });
   }
 }

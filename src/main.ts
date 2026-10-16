@@ -1,4 +1,4 @@
-import { Menu, normalizePath, Notice, Platform, Plugin, TAbstractFile, TFile } from "obsidian";
+import { Menu, type Modal, normalizePath, Notice, Platform, Plugin, TAbstractFile, TFile } from "obsidian";
 import { DEFAULT_SETTINGS, legacyAgentSettings, normalizeSettings } from "./defaults";
 import { QiaomuPublishSettingTab } from "./settings-tab";
 import type { QiaomuPublishSettings, WechatArticleAppearance } from "./types";
@@ -9,6 +9,7 @@ export default class QiaomuPublishPlugin extends Plugin {
   override settings: QiaomuPublishSettings = normalizeSettings(DEFAULT_SETTINGS);
   private saveQueue: Promise<void> = Promise.resolve();
   private appearanceListeners = new Set<() => void>();
+  private modals = new Set<Modal>();
 
   override async onload(): Promise<void> {
     await this.loadSettings();
@@ -95,7 +96,20 @@ export default class QiaomuPublishPlugin extends Plugin {
   }
 
   openWechatPublish(file: TFile): void {
-    new WechatPublishModal(this.app, file, this).open();
+    this.showModal(new WechatPublishModal(this.app, file, this));
+  }
+
+  showModal(modal: Modal): void {
+    const close = modal.onClose.bind(modal);
+    modal.onClose = () => { this.modals.delete(modal); close(); };
+    this.modals.add(modal);
+    modal.open();
+  }
+
+  override onunload(): void {
+    for (const modal of this.modals) modal.close();
+    this.modals.clear();
+    this.appearanceListeners.clear();
   }
 
   async openWechatPreview(file: TFile): Promise<void> {

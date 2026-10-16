@@ -121,6 +121,7 @@ export abstract class SearchPicker<T extends PickerItem> {
     this.shown = [...this.items().filter((item) => !query || this.matches(item, query)), ...(query ? this.extraItems(this.search.value.trim()) : [])];
     this.active = Math.max(0, this.shown.findIndex((item) => item.id === this.value));
     this.list.empty();
+    setName(this.list, this.options.listName);
     this.shown.forEach((item, index) => {
       const selected = item.id === this.value;
       const row = this.list.createDiv({ cls: "qiaomu-wechat-picker-row", attr: { role: "option", "aria-selected": String(selected), "data-index": String(index) } });
