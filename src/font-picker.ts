@@ -30,12 +30,12 @@ export class FontPicker extends SearchPicker<FontItem> {
   }
   protected renderLabel(button: HTMLElement): void {
     const item = this.fonts.find((entry) => entry.id === this.value) ?? { id: this.value, label: this.value, css: cssFor(this.value) };
-    button.createSpan({ cls: "qiaomu-wechat-picker-name", text: item.label }).setCssProps({ "font-family": item.css });
+    button.createSpan({ cls: "qiaomu-wechat-picker-name", text: item.label }).setCssProps({ "--qiaomu-picker-font": item.css });
     setIcon(button.createSpan({ cls: "qiaomu-wechat-picker-chevron" }), "chevron-down");
     setName(button, `封面字体，当前 ${item.label}`);
   }
   protected renderItem(row: HTMLElement, item: FontItem): void {
-    row.createSpan({ cls: "qiaomu-wechat-picker-name", text: item.label }).setCssProps({ "font-family": item.css });
+    row.createSpan({ cls: "qiaomu-wechat-picker-name", text: item.label }).setCssProps({ "--qiaomu-picker-font": item.css });
   }
   protected choose(id: string): void { this.setValue(id); this.onPick(id); }
 

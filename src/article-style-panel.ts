@@ -84,7 +84,7 @@ export class ArticleStylePanel {
     for (const hex of PRESET_COLORS) {
       const dot = tools.createEl("button", { cls: "qiaomu-wechat-color-dot", attr: { type: "button", "aria-pressed": "false", "data-qm-tip": hex } });
       setName(dot, `${text.primaryColor} ${hex}`);
-      dot.setCssProps({ "background-color": hex });
+      dot.setCssProps({ "--qiaomu-swatch-color": hex });
       dot.addEventListener("click", () => this.commit((style) => { style.primaryColor = hex; }));
       this.presets.set(hex, dot);
     }

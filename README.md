@@ -152,3 +152,17 @@ npm run dev     # 开发监听
 [工具](https://qiaomu.ai/) · [博客](https://blog.qiaomu.ai/) · [推荐](https://tuijian.qiaomu.ai/) · [X @vista8](https://x.com/vista8) · [GitHub](https://github.com/joeseesun)
 
 [MIT License](LICENSE). 排版主题名称用于描述视觉风格，与相应品牌无关联。
+
+---
+
+## English
+
+**Qiaomu Publish turns your Obsidian notes into formatted WeChat Official Account articles.** Keep writing in Markdown, preview the article beside your note, and choose whether to copy the formatted content, export a file, or send it to an account’s draft box. No account is needed for previewing, formatting, copying or exporting.
+
+Choose from 42 searchable themes, adjust typography and spacing, and keep a different appearance for each note. Code highlighting, formula and Mermaid image conversion, generated title covers, standalone HTML and long PNG exports help reduce repetitive publishing work. Direct and Qiaomu relay connections can update the existing draft instead of creating duplicates.
+
+To install, download `main.js`, `manifest.json` and `styles.css` from the [latest release](https://github.com/joeseesun/qiaomu-publish/releases/latest), place them in your vault’s `.obsidian/plugins/qiaomu-publish/` folder, restart Obsidian, and enable the plugin. Obsidian 1.11.4 or later is required. The current plugin interface is Chinese.
+
+Sending drafts requires an eligible WeChat Official Account, API credentials and IP allowlisting. Credentials use Obsidian SecretStorage; the optional relay receives them and article content over HTTPS. Remote images and explicit connection operations use the network. The plugin never mass-publishes articles.
+
+Desktop checks include actual previews, exports, settings persistence and upgrade preservation. Draft creation and updates were tested against a controlled local service; live WeChat delivery and mobile hardware are not covered by those checks. Read the [full English guide](README.en.md) for installation, privacy, limitations and verification. MIT licensed.
