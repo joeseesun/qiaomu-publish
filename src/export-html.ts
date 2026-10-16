@@ -2,7 +2,7 @@ import { buildWechatExportCss, type WechatExportStyleTokens } from "./export-sty
 import { inlineCss } from "./inline-css";
 import { buildWechatExportFragment, normalizeInlinedWechatHtml, normalizeWechatArticleDom, parseWechatArticleHtml } from "./normalize";
 import { DEFAULT_WECHAT_EXPORT_THEME_CONFIG, getWechatExportTheme, WECHAT_EXPORT_BUILTIN_THEMES, type WechatExportTheme } from "./themes";
-import { buildArticleStyleCss } from "./article-style";
+import { applyPrimaryColor, buildArticleStyleCss, normalizeArticleStyle } from "./article-style";
 import type { WechatArticleStyle } from "./types";
 
 /** The blog's light article palette (fallbacks of qmblog readWechatExportStyleTokens). */
@@ -39,12 +39,14 @@ export function resolveWechatTheme(themeId?: string | null): WechatExportTheme {
 
 /** Article HTML → WeChat-ready HTML with every style inlined. `data-qm-image` markers are preserved. */
 export function buildWechatHtml(articleHtml: string, theme: WechatExportTheme, baseUrl?: string, style?: WechatArticleStyle): string {
+  const options = normalizeArticleStyle(style);
   const doc = parseWechatArticleHtml(articleHtml);
-  normalizeWechatArticleDom(doc, { baseUrl });
+  normalizeWechatArticleDom(doc, { baseUrl, codeTheme: options.codeTheme, macCode: options.macCode, codeLineNumbers: options.codeLineNumbers, linkFootnotes: options.linkFootnotes, imageCaptions: options.imageCaptions });
   const fragmentDoc = new DOMParser().parseFromString(buildWechatExportFragment(doc.body.innerHTML), "text/html");
   const root = fragmentDoc.body.firstElementChild;
   if (!root) return "";
-  inlineCss(root, `${buildWechatExportCss(WECHAT_STYLE_TOKENS, theme)}\n${buildArticleStyleCss(style)}`);
+  const tokens = options.primaryColor ? { ...WECHAT_STYLE_TOKENS, accentColor: options.primaryColor, linkColor: options.primaryColor } : WECHAT_STYLE_TOKENS;
+  inlineCss(root, `${applyPrimaryColor(buildWechatExportCss(tokens, theme), theme, options.primaryColor)}\n${buildArticleStyleCss(options)}`);
   return normalizeInlinedWechatHtml(root.outerHTML);
 }
 

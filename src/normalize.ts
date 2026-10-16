@@ -14,6 +14,7 @@ import {
   WECHAT_LIST_MARKER_CLASS,
 } from './list-markers'
 import { normalizeWechatExportHtml } from './export-style'
+import { getCodeTheme, highlightCodeLines, type CodeTheme } from './code-highlight'
 
 export function escapeHtml(value: string) {
   return value
@@ -123,10 +124,17 @@ function stripThemeConflictingInlineStyles(root: ParentNode) {
   }
 }
 
-function normalizeCodeLinesMarkup(code: HTMLElement) {
+interface CodeBlockOptions {
+  palette?: CodeTheme
+  macCode: boolean
+  lineNumbers: boolean
+}
+
+function normalizeCodeLinesMarkup(code: HTMLElement, options: CodeBlockOptions) {
   if (code.querySelector(':scope > .wechat-code-body')) return
 
   const codeText = (code.textContent || '').replace(/\r\n/g, '\n')
+  const colored = options.palette ? highlightCodeLines(codeText, getCodeLanguage(code), options.palette) : null
   const body = code.ownerDocument.createElement('span')
   body.className = 'wechat-code-body'
 
@@ -138,14 +146,27 @@ function normalizeCodeLinesMarkup(code: HTMLElement) {
   for (const [index, line] of codeText.split('\n').entries()) {
     const row = code.ownerDocument.createElement('span')
     row.className = 'wechat-code-row'
-    const number = code.ownerDocument.createElement('span')
-    number.className = 'wechat-code-line-number'
-    number.setAttribute('aria-hidden', 'true')
-    number.textContent = String(index + 1)
     const content = code.ownerDocument.createElement('span')
     content.className = 'wechat-code-line'
-    content.textContent = line || '\u00a0'
-    row.append(number, content)
+    const segments = colored?.[index]
+    if (segments?.length) {
+      for (const segment of segments) {
+        const piece = code.ownerDocument.createElement('span')
+        piece.textContent = segment.text
+        if (segment.color) piece.style.color = segment.color
+        content.append(piece)
+      }
+    } else {
+      content.textContent = line || '\u00a0'
+    }
+    if (options.lineNumbers) {
+      const number = code.ownerDocument.createElement('span')
+      number.className = 'wechat-code-line-number'
+      number.setAttribute('aria-hidden', 'true')
+      number.textContent = String(index + 1)
+      row.append(number)
+    }
+    row.append(content)
     codeLines.append(row)
   }
 
@@ -154,7 +175,7 @@ function normalizeCodeLinesMarkup(code: HTMLElement) {
   code.replaceChildren(body)
 }
 
-function normalizeCodeBlockMarkup(root: ParentNode) {
+function normalizeCodeBlockMarkup(root: ParentNode, options: CodeBlockOptions) {
   for (const pre of root.querySelectorAll<HTMLPreElement>('pre')) {
     const code = pre.querySelector<HTMLElement>('code')
     if (!code)
@@ -162,11 +183,13 @@ function normalizeCodeBlockMarkup(root: ParentNode) {
 
     pre.classList.add('code__pre')
 
-    normalizeCodeLinesMarkup(code)
+    normalizeCodeLinesMarkup(code, options)
 
     for (const sign of pre.querySelectorAll(':scope > .mac-sign')) {
       sign.remove()
     }
+
+    if (!options.macCode) continue
 
     const sign = pre.ownerDocument.createElement('span')
     sign.className = 'mac-sign'
@@ -632,6 +655,12 @@ function removeEmptyParagraphsAroundWechatLists(root: ParentNode) {
 export interface WechatNormalizeOptions {
   /** Base URL for turning relative links into footnotes. */
   baseUrl?: string
+  codeTheme?: string
+  /** Defaults below keep the previous output when unset. */
+  macCode?: boolean
+  codeLineNumbers?: boolean
+  linkFootnotes?: boolean
+  imageCaptions?: boolean
 }
 
 /** Normalizes rendered article HTML into WeChat-safe markup (before CSS inlining). */
@@ -639,9 +668,9 @@ export function normalizeWechatArticleDom(doc: Document, options: WechatNormaliz
   normalizeMediaAttributes(doc)
   normalizeWechatPublishingBlocks(doc)
   normalizeWechatInlineMarkup(doc)
-  normalizeCodeBlockMarkup(doc)
+  normalizeCodeBlockMarkup(doc, { palette: getCodeTheme(options.codeTheme), macCode: options.macCode !== false, lineNumbers: options.codeLineNumbers !== false })
   normalizeWechatImageGridMarkup(doc)
-  normalizeWechatImageFigures(doc)
+  normalizeWechatImageFigures(doc, options.imageCaptions !== false)
   normalizeWechatListMarkup(doc)
   normalizeWechatTableMarkup(doc)
   normalizeWechatListItemMarkup(doc)
@@ -649,7 +678,12 @@ export function normalizeWechatArticleDom(doc: Document, options: WechatNormaliz
   removeEmptyParagraphsAroundWechatLists(doc)
   normalizeWechatVideoPlaceholders(doc)
   stripThemeConflictingInlineStyles(doc)
-  normalizeWechatExternalLinkFootnotes(doc, options.baseUrl || 'https://example.invalid/')
+  if (options.linkFootnotes === true) normalizeWechatExternalLinkFootnotes(doc, options.baseUrl || 'https://example.invalid/')
+  else removeLinkReferences(doc)
+}
+
+function removeLinkReferences(root: ParentNode) {
+  root.querySelectorAll('.wechat-link-references, sup.wechat-link-ref').forEach(element => element.remove())
 }
 
 export function parseWechatArticleHtml(html: string) {

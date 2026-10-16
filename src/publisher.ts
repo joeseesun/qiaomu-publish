@@ -1,3 +1,5 @@
+import { DEFAULT_COVER_STYLE, renderTitleCover } from "./title-cover";
+import type { WechatCoverStyle } from "./types";
 import { type App, getLinkpath, TFile } from "obsidian";
 import type { ArticleImage, RenderedNote } from "./render-note";
 import { finalizeWechatImages } from "./export-html";
@@ -13,6 +15,8 @@ export interface DraftMeta {
   sourceUrl: string;
   /** Frontmatter cover: vault link/path or http(s) URL. Empty → first article image. */
   cover: string;
+  /** Big text on the generated cover. Empty follows the title; the two are independent once set. */
+  coverText: string;
   openComment: boolean;
 }
 
@@ -43,6 +47,7 @@ export function metaFromFrontmatter(frontmatter: Record<string, unknown>, title:
     digest: stringField(frontmatter, "digest", "摘要", "description", "summary"),
     sourceUrl: stringField(frontmatter, "source_url", "原文链接", "url"),
     cover: stringField(frontmatter, "cover", "封面", "image").replace(/^!?\[\[(.+?)(?:\|.*)?\]\]$/, "$1"),
+    coverText: stringField(frontmatter, "cover_text", "封面文字"),
     openComment: defaults.openComment,
   };
 }
@@ -57,36 +62,6 @@ export function resolveCover(app: App, sourcePath: string, meta: DraftMeta, imag
   const first = images[0];
   if (!first) return null;
   return first.kind === "remote" ? { kind: "url", url: first.url } : { kind: "image", image: first };
-}
-
-/** A quiet fallback makes a text-only note eligible for a WeChat article draft. */
-async function titleCover(title: string): Promise<ArrayBuffer> {
-  const canvas = document.createElement("canvas");
-  canvas.width = 900;
-  canvas.height = 383;
-  const context = canvas.getContext("2d");
-  if (!context) throw new Error("当前设备无法生成标题封面，请为笔记指定封面图片");
-  context.fillStyle = "#f5f3ef";
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = "#242424";
-  context.fillRect(56, 55, 48, 5);
-  context.font = "600 52px -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif";
-  context.textBaseline = "top";
-  const chars = Array.from(title.trim());
-  const lines: string[] = [];
-  let line = "";
-  for (const char of chars) {
-    if (context.measureText(line + char).width > 770 && line) { lines.push(line); line = char; }
-    else line += char;
-  }
-  if (line) lines.push(line);
-  for (const [index, text] of lines.slice(0, 3).entries()) {
-    const last = index === 2 && lines.length > 3;
-    context.fillText(last ? `${text.slice(0, -1)}…` : text, 56, 125 + index * 68, 790);
-  }
-  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.88));
-  if (!blob) throw new Error("生成标题封面失败，请为笔记指定封面图片");
-  return blob.arrayBuffer();
 }
 
 export interface PublishCheck { level: "error" | "warning" | "info"; message: string; fix: string; }
@@ -133,6 +108,7 @@ export async function publishDraft(options: {
   meta: DraftMeta;
   signal?: AbortSignal;
   existingMediaId?: string;
+  cover?: WechatCoverStyle;
   onProgress?: PublishProgress;
 }): Promise<{ mediaId: string; accountName: string }> {
   const { app, client, note, meta, onProgress } = options;
@@ -153,7 +129,7 @@ export async function publishDraft(options: {
   let coverUrl = "";
   if (!cover) {
     onProgress?.("生成标题封面");
-    const result = await client.uploadImage(meta.accountId, "cover", "title-cover.jpg", "image/jpeg", await titleCover(meta.title));
+    const result = await client.uploadImage(meta.accountId, "cover", "title-cover.jpg", "image/jpeg", await renderTitleCover(meta.coverText || meta.title, options.cover ?? DEFAULT_COVER_STYLE));
     if (!result.media_id) throw new Error("标题封面上传没有返回 media_id");
     thumbMediaId = result.media_id;
   } else if (cover.kind === "url") {

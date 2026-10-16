@@ -134,6 +134,13 @@ describe("publishing metadata", () => {
     expect(imageMime("a.svg")).toBeNull();
   });
 
+  it("keeps the cover text separate from the title", () => {
+    const defaults = { accountId: "main", author: "", openComment: true };
+    expect(metaFromFrontmatter({}, "很长的文章标题", defaults)).toMatchObject({ title: "很长的文章标题", coverText: "" });
+    expect(metaFromFrontmatter({ 封面文字: "一句话" }, "很长的文章标题", defaults)).toMatchObject({ title: "很长的文章标题", coverText: "一句话" });
+    expect(metaFromFrontmatter({ cover_text: "short" }, "标题", defaults).coverText).toBe("short");
+  });
+
   it("blocks publishing without an account, title or cover", () => {
     const meta = metaFromFrontmatter({}, "", { accountId: "", author: "", openComment: false });
     const levels = preflight(meta, "<p>x</p>", false, ["公式降级"]).map((check) => check.level);

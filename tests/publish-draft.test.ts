@@ -13,7 +13,7 @@ describe("text-only note publishing", () => {
       if (tagName !== "canvas") return originalCreate(tagName, options);
       return {
         width: 0, height: 0,
-        getContext: () => ({ fillStyle: "", font: "", textBaseline: "", fillRect: () => {}, measureText: (text: string) => ({ width: text.length * 32 }), fillText: () => {} }),
+        getContext: () => ({ fillStyle: "", font: "", textBaseline: "", textAlign: "", globalAlpha: 1, fillRect: () => {}, createLinearGradient: () => ({ addColorStop: () => {} }), measureText: (text: string) => ({ width: text.length * 32 }), fillText: () => {} }),
         toBlob: (callback: (blob: Blob | null) => void) => callback(new Blob(["jpeg-image"], { type: "image/jpeg" })),
       } as unknown as HTMLCanvasElement;
     });
@@ -29,7 +29,7 @@ describe("text-only note publishing", () => {
       getDraft: async () => ({ title: "" }),
       updateDraft: async () => { throw new Error("unexpected update"); },
     };
-    const meta: DraftMeta = { accountId: "relay:1", title: "没有配图的笔记", author: "", digest: "", sourceUrl: "", cover: "", openComment: true };
+    const meta: DraftMeta = { accountId: "relay:1", title: "没有配图的笔记", author: "", digest: "", sourceUrl: "", cover: "", coverText: "", openComment: true };
     const result = await publishDraft({
       app: {} as never,
       client,

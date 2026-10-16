@@ -88,7 +88,9 @@ export function cleanObsidianDom(root: Element, options: CleanOptions): void {
       toSpan(link);
       continue;
     }
-    for (const attribute of ["target", "rel", "class", "data-tooltip-position", "aria-label"]) link.removeAttribute(attribute);
+    for (const attribute of ["target", "rel", "class"]) link.removeAttribute(attribute);
+    // Exported links carry no host accessibility attributes (Obsidian turns them into tooltips).
+    for (const attribute of Array.from(link.attributes)) if (/^(aria-|data-tool)/.test(attribute.name)) link.removeAttribute(attribute.name);
   }
 
   for (const media of Array.from(root.querySelectorAll("iframe, video, audio, object, embed"))) {

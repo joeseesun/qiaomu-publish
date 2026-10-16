@@ -86,6 +86,14 @@ export default class QiaomuPublishPlugin extends Plugin {
     await this.saveSettings();
   }
 
+  /** Opens this plugin's page in Obsidian settings (the host has no documented API for it). */
+  openSettings(): void {
+    const setting = (this.app as unknown as { setting?: { open(): void; openTabById(id: string): void } }).setting;
+    if (!setting) { new Notice("请在 设置 → 第三方插件 → Qiaomu Publish 中管理公众号连接"); return; }
+    setting.open();
+    setting.openTabById(this.manifest.id);
+  }
+
   openWechatPublish(file: TFile): void {
     new WechatPublishModal(this.app, file, this).open();
   }

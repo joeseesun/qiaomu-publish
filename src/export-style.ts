@@ -97,8 +97,8 @@ export function buildWechatExportCss(tokens: WechatExportStyleTokens, theme?: We
 .wechat-export-content {
   color: ${tokens.articleBodyColor};
   font-family: ${tokens.bodyFontFamily};
-  font-size: 17px;
-  line-height: 1.78;
+  font-size: 16px;
+  line-height: 1.8;
   text-align: left;
   text-align-last: left;
   text-justify: none;
@@ -129,12 +129,12 @@ export function buildWechatExportCss(tokens: WechatExportStyleTokens, theme?: We
   letter-spacing: 0.015em;
 }
 
-.wechat-export-content h1 { font-size: 1.72rem; }
-.wechat-export-content h2 { font-size: 1.46rem; }
-.wechat-export-content h3 { font-size: 1.24rem; }
-.wechat-export-content h4 { font-size: 1.12rem; }
-.wechat-export-content h5 { font-size: 1.04rem; }
-.wechat-export-content h6 { font-size: 0.98rem; }
+.wechat-export-content h1 { font-size: 1.38em; }
+.wechat-export-content h2 { font-size: 1.2em; }
+.wechat-export-content h3 { font-size: 1.08em; }
+.wechat-export-content h4 { font-size: 1em; }
+.wechat-export-content h5 { font-size: 0.96em; }
+.wechat-export-content h6 { font-size: 0.92em; }
 
 .wechat-export-title,
 .wechat-export-content h1,

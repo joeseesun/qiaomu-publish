@@ -11,8 +11,8 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
-/** Copy the exact article HTML used by both preview and draft, with local images embedded. */
-export async function copyWechatHtml(app: App, html: string, images: ArticleImage[]): Promise<void> {
+/** The exact article HTML used by preview and draft, with local images embedded as data URLs. */
+export async function embedWechatImages(app: App, html: string, images: ArticleImage[]): Promise<string> {
   const doc = new DOMParser().parseFromString(html, "text/html");
   for (const image of Array.from(doc.querySelectorAll("img[data-qm-image]"))) {
     const source = images.find((item) => item.id === image.getAttribute("data-qm-image"));
@@ -20,8 +20,14 @@ export async function copyWechatHtml(app: App, html: string, images: ArticleImag
     if (source?.kind === "vault") image.setAttribute("src", await blobToDataUrl(new Blob([await app.vault.readBinary(source.file)], { type: imageMime(source.file.name) ?? "image/png" })));
     image.removeAttribute("data-qm-image");
   }
+  return doc.body.innerHTML;
+}
+
+/** Copy the exact article HTML used by both preview and draft, with local images embedded. */
+export async function copyWechatHtml(app: App, html: string, images: ArticleImage[]): Promise<void> {
+  const embedded = await embedWechatImages(app, html, images);
   await navigator.clipboard.write([new ClipboardItem({
-    "text/html": new Blob([doc.body.innerHTML], { type: "text/html" }),
-    "text/plain": new Blob([doc.body.textContent ?? ""], { type: "text/plain" }),
+    "text/html": new Blob([embedded], { type: "text/html" }),
+    "text/plain": new Blob([new DOMParser().parseFromString(embedded, "text/html").body.textContent ?? ""], { type: "text/plain" }),
   })]);
 }

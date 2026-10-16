@@ -26,10 +26,10 @@ describe("article appearance persistence", () => {
   });
 
   it("ignores malformed appearance and rejects nonnumeric CSS payloads", () => {
-    expect(normalizeArticleStyle({ fontSize: "20; color:red", lineHeight: Infinity, paragraphSpacing: -4, pagePadding: 999 })).toEqual({ paragraphSpacing: 0, pagePadding: 32 });
+    expect(normalizeArticleStyle({ fontSize: "20; color:red", lineHeight: Infinity, paragraphSpacing: -4, pagePadding: 999 })).toEqual({ paragraphSpacing: 0, pagePadding: 24 });
     const settings = normalizeSettings({ wechat: { noteStyles: { "bad.md": { themeId: "missing" }, "folder": { themeId: "vercel-mono" }, "good.md": { themeId: "vercel-mono", style: { fontSize: 100 } } } } });
     expect(Object.keys(settings.wechat.noteStyles)).toEqual(["good.md"]);
-    expect(settings.wechat.noteStyles["good.md"]?.style.fontSize).toBe(24);
+    expect(settings.wechat.noteStyles["good.md"]?.style.fontSize).toBe(20);
   });
 });
 

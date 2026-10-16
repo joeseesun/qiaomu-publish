@@ -2,7 +2,8 @@ import { type App, Component, Modal, Notice, sanitizeHTMLToDom, setIcon, Setting
 import type { WechatPublishSettings } from "./types";
 import type { WechatAccount } from "./bridge-client";
 import { WechatTransportRouter } from "./transport-router";
-import { buildWechatHtml, listWechatThemes, resolveWechatTheme } from "./export-html";
+import { setName } from "./accessible-name";
+import { buildWechatHtml, resolveWechatTheme } from "./export-html";
 import { type DraftMeta, metaFromFrontmatter, preflight, publishDraft, recordDraft, resolveCover } from "./publisher";
 import { renderNoteForWechat, type ArticleImage, type RenderedNote } from "./render-note";
 import { copyWechatHtml } from "./copy-html";
@@ -12,6 +13,8 @@ import type QiaomuPublishPlugin from "./main";
 import { QIAOMU_RELAY_CODE, QIAOMU_RELAY_URL } from "./defaults";
 import { resolveArticleAppearance } from "./article-style";
 import type { WechatArticleStyle } from "./types";
+import { CoverEditor } from "./cover-editor";
+import { ThemePicker } from "./theme-picker";
 import { connectionSecretId } from "./secret-storage";
 
 export class WechatPublishModal extends Modal {
@@ -32,7 +35,12 @@ export class WechatPublishModal extends Modal {
   private publishButton!: HTMLButtonElement;
   private copyButton!: HTMLButtonElement;
   private draftAction: "update" | "new" = "update";
-  private coverPreviewTitle: HTMLElement | null = null;
+  private coverEditor: CoverEditor | null = null;
+  private picker!: ThemePicker;
+  private paper!: HTMLElement;
+  private screen!: HTMLElement;
+  private previewTimer: number | null = null;
+  private checksTimer: number | null = null;
 
   private readonly settings: WechatPublishSettings;
 
@@ -53,6 +61,10 @@ export class WechatPublishModal extends Modal {
   }
 
   override onClose(): void {
+    if (this.previewTimer !== null) window.clearTimeout(this.previewTimer);
+    if (this.checksTimer !== null) window.clearTimeout(this.checksTimer);
+    this.coverEditor?.destroy();
+    this.picker?.destroy();
     this.abort?.abort();
     this.note?.dispose();
     this.component.unload();
@@ -93,10 +105,10 @@ export class WechatPublishModal extends Modal {
     const meta = this.meta!;
     this.statusEl.remove();
     const { contentEl } = this;
-    const form = contentEl.createDiv({ cls: "qiaomu-wechat-form" });
+    const body = contentEl.createDiv({ cls: "qiaomu-wechat-body" });
 
     if (this.accounts.length === 0) {
-      this.renderConnectionForm(form);
+      this.renderConnectionForm(body.createDiv({ cls: "qiaomu-wechat-form" }));
       let previewError = "";
       try { this.wechatHtml = buildWechatHtml(note.html, resolveWechatTheme(this.themeId), undefined, this.articleStyle); }
       catch (error) { this.wechatHtml = ""; previewError = `排版失败：${error instanceof Error ? error.message : String(error)}`; }
@@ -112,41 +124,55 @@ export class WechatPublishModal extends Modal {
       return;
     }
 
+    const columns = body.createDiv({ cls: "qiaomu-wechat-columns" });
+    const form = columns.createDiv({ cls: "qiaomu-wechat-form" });
+    const phone = columns.createDiv({ cls: "qiaomu-wechat-phone" });
+    this.screen = phone.createDiv({ cls: "qiaomu-wechat-phone-screen" });
+    const bar = this.screen.createDiv({ cls: "qiaomu-wechat-phone-bar", attr: { "aria-hidden": "true" } });
+    bar.createSpan({ cls: "qiaomu-wechat-phone-time", text: "9:41" });
+    bar.createSpan({ cls: "qiaomu-wechat-phone-island" });
+    const status = bar.createSpan({ cls: "qiaomu-wechat-phone-icons" });
+    for (const icon of ["signal", "wifi", "battery-full"]) setIcon(status.createSpan(), icon);
+    const scroll = this.screen.createDiv({ cls: "qiaomu-wechat-phone-scroll", attr: { role: "region" } });
+    setName(scroll, "公众号排版预览");
+    this.paper = scroll.createDiv({ cls: "qiaomu-wechat-preview-paper" });
+    this.previewRoot = this.paper.attachShadow({ mode: "open" });
+    this.screen.createDiv({ cls: "qiaomu-wechat-phone-home", attr: { "aria-hidden": "true" } });
+
     const accountSetting = new Setting(form).setName("公众号");
     const draftChoiceHost = form.createDiv();
     accountSetting.addDropdown((dropdown) => {
-      if (this.accounts.length === 0) dropdown.addOption("", this.clientError ? "未连接" : "无可用公众号");
       for (const account of this.accounts) dropdown.addOption(account.id, account.name);
       dropdown.setValue(meta.accountId).onChange((value) => { meta.accountId = value; draftChoiceHost.empty(); this.renderDraftChoice(draftChoiceHost); this.refreshChecks(); });
-      dropdown.setDisabled(this.accounts.length === 0);
     });
+    accountSetting.addButton((button) => button.setButtonText("管理连接").onClick(() => { this.close(); this.plugin.openSettings(); }));
     this.renderDraftChoice(draftChoiceHost);
-    new Setting(form).setName("排版主题").addDropdown((dropdown) => {
-      for (const theme of listWechatThemes()) dropdown.addOption(theme.id, theme.name);
-      dropdown.setValue(resolveWechatTheme(this.themeId).id).onChange((value) => { this.themeId = value; this.renderPreview(); });
-    });
+
+    const themeSetting = new Setting(form).setName("排版主题");
+    this.picker = new ThemePicker(themeSetting.controlEl, (themeId) => {
+      this.themeId = themeId;
+      this.picker.setValue(themeId, this.articleStyle.primaryColor);
+      this.renderPreviewSoon();
+    }, "field");
+    this.picker.setValue(resolveWechatTheme(this.themeId).id, this.articleStyle.primaryColor);
+
     new Setting(form).setName("标题").addText((text) => {
-      text.setValue(meta.title).onChange((value) => { meta.title = value.trim(); this.coverPreviewTitle?.setText(meta.title); this.refreshChecks(); });
+      text.setValue(meta.title).onChange((value) => { meta.title = value.trim(); this.coverEditor?.sync(); this.scheduleChecks(); });
       text.inputEl.addClass("qiaomu-wechat-wide");
     });
-    new Setting(form).setName("作者").addText((text) => text.setValue(meta.author).onChange((value) => { meta.author = value.trim(); this.refreshChecks(); }));
+    new Setting(form).setName("作者").addText((text) => text.setValue(meta.author).onChange((value) => { meta.author = value.trim(); this.scheduleChecks(); }));
     new Setting(form).setName("摘要").setDesc("留空时公众号自动截取正文开头。").addTextArea((area) => {
-      area.setValue(meta.digest).onChange((value) => { meta.digest = value.trim(); this.refreshChecks(); });
+      area.setValue(meta.digest).onChange((value) => { meta.digest = value.trim(); this.scheduleChecks(); });
       area.inputEl.rows = 2;
       area.inputEl.addClass("qiaomu-wechat-wide");
     });
-    const coverSetting = new Setting(form).setName("封面").setDesc(this.coverLabel(note.images));
-    this.coverPreviewTitle = null;
-    if (!resolveCover(this.app, this.file.path, meta, note.images)) {
-      const cover = coverSetting.controlEl.createDiv({ cls: "qiaomu-title-cover-preview" });
-      this.coverPreviewTitle = cover.createDiv({ text: meta.title });
-    }
+    new Setting(form).setName("封面").setDesc(this.coverLabel(note.images));
+    this.coverEditor?.destroy();
+    this.coverEditor = null;
+    if (!resolveCover(this.app, this.file.path, meta, note.images)) this.renderCoverEditor(form);
 
-    this.checksEl = contentEl.createEl("ul", { cls: "qiaomu-wechat-checks" });
-    this.checksEl.setAttribute("aria-label", "发布前检查");
-    const preview = contentEl.createDiv({ cls: "qiaomu-wechat-preview" });
-    preview.setAttribute("aria-label", "公众号排版预览");
-    this.previewRoot = preview.attachShadow({ mode: "open" });
+    this.checksEl = form.createEl("ul", { cls: "qiaomu-wechat-checks" });
+    setName(this.checksEl, "发布前检查");
 
     const footer = contentEl.createDiv({ cls: "qiaomu-wechat-footer" });
     this.statusEl = footer.createDiv({ cls: "qiaomu-wechat-status" });
@@ -159,7 +185,42 @@ export class WechatPublishModal extends Modal {
     cancel.addEventListener("click", () => this.close());
     this.publishButton = actions.createEl("button", { text: "发到草稿箱", cls: "mod-cta" });
     this.publishButton.addEventListener("click", () => void this.publish());
-    this.renderPreview();
+    // Show the form first; laying out a long article is the slow part.
+    this.showPreviewPlaceholder();
+    this.renderPreviewSoon(30);
+  }
+
+  private showPreviewPlaceholder(): void {
+    const hint = this.previewRoot.ownerDocument.createElement("div");
+    hint.textContent = "正在排版预览…";
+    hint.style.cssText = "padding:48px 0;text-align:center;color:#999;font:13px -apple-system,'PingFang SC',sans-serif";
+    this.previewRoot.replaceChildren(hint);
+  }
+
+  private renderPreviewSoon(delay = 90): void {
+    if (this.previewTimer !== null) window.clearTimeout(this.previewTimer);
+    this.previewTimer = window.setTimeout(() => { this.previewTimer = null; if (this.contentEl.isConnected) this.renderPreview(); }, delay);
+  }
+
+  /** Validation reads the whole article, so typing must not trigger it on every keystroke. */
+  private scheduleChecks(): void {
+    if (this.checksTimer !== null) window.clearTimeout(this.checksTimer);
+    this.checksTimer = window.setTimeout(() => { this.checksTimer = null; if (this.contentEl.isConnected) this.refreshChecks(); }, 250);
+  }
+
+  /** The generated cover is drawn live with the same code that makes the uploaded image. */
+  private renderCoverEditor(container: HTMLElement): void {
+    this.coverEditor?.destroy();
+    new Setting(container).setName("封面文字").setDesc("留空则用上面的标题。封面上的大字可以比标题更短、更有冲击力。")
+      .addText((text) => text.setPlaceholder(this.meta?.title ?? "").setValue(this.meta?.coverText ?? "").onChange((value) => { this.meta!.coverText = value.trim(); this.coverEditor?.sync(); }));
+    this.coverEditor = new CoverEditor(container, {
+      title: () => this.meta?.coverText || this.meta?.title || "",
+      style: () => this.settings.cover,
+      update: (style) => {
+        this.settings.cover = style;
+        void this.plugin.saveSettings().catch(() => new Notice("封面样式保存失败"));
+      },
+    });
   }
 
   private coverLabel(images: ArticleImage[]): string {
@@ -178,7 +239,16 @@ export class WechatPublishModal extends Modal {
       this.wechatHtml = "";
       this.statusEl.setText(`排版失败：${error instanceof Error ? error.message : String(error)}`);
     }
-    this.previewRoot.replaceChildren(sanitizeHTMLToDom(this.wechatHtml));
+    const fragment = sanitizeHTMLToDom(this.wechatHtml);
+    for (const image of Array.from(fragment.querySelectorAll("img"))) { image.decoding = "async"; image.loading = "lazy"; }
+    this.previewRoot.replaceChildren(fragment);
+    const root = this.previewRoot.querySelector<HTMLElement>(".wechat-export-root");
+    const computed = root ? this.previewRoot.ownerDocument.defaultView?.getComputedStyle(root).backgroundColor : "";
+    const paper = computed && computed !== "rgba(0, 0, 0, 0)" ? computed : "#ffffff";
+    const channels = (paper.match(/\d+/g) ?? ["255", "255", "255"]).slice(0, 3).map(Number);
+    const dark = (0.299 * channels[0]! + 0.587 * channels[1]! + 0.114 * channels[2]!) < 140;
+    this.paper.setCssProps({ "background-color": paper });
+    this.screen.setCssProps({ "--qm-paper": paper, "--qm-ink": dark ? "#f5f5f5" : "#111111" });
     this.refreshChecks();
   }
 
@@ -212,7 +282,7 @@ export class WechatPublishModal extends Modal {
     const panel = container.createDiv({ cls: "qiaomu-wechat-connect" });
     panel.createEl("h3", { text: "连接你的公众号" });
     panel.createEl("p", { text: "连接一次，以后打开笔记就能直接发到自己的草稿箱。" });
-    const input = { mode: "relay" as "relay" | "direct", appId: "", appSecret: "", relayUrl: QIAOMU_RELAY_URL };
+    const input = { mode: "relay" as "relay" | "direct", name: "", appId: "", appSecret: "", relayUrl: QIAOMU_RELAY_URL };
     panel.createEl("a", { text: "前往公众号后台获取 AppID 和 AppSecret", href: "https://mp.weixin.qq.com/", attr: { target: "_blank", rel: "noopener noreferrer" } });
     const mode = new Setting(panel).setName("连接方式").addDropdown((dropdown) => {
       dropdown.addOption("relay", "固定 IP 中转（推荐）");
@@ -233,6 +303,7 @@ export class WechatPublishModal extends Modal {
       if (ips.length) ipStatus.createEl("button", { text: "复制 IP" }).addEventListener("click", () => void navigator.clipboard.writeText(ips.join("\n")).then(() => ipStatus.setText(`已复制 ${ips.join("、")}，请粘贴到公众号后台 API IP 白名单。`)).catch(() => ipStatus.setText(`复制失败，请手动复制：${ips.join("、")}`)));
     };
     showIps(knownRelayEgressIps(input.relayUrl));
+    new Setting(panel).setName("名称（可选）").setDesc("只用来在这里区分多个公众号；留空会自动命名。").addText((text) => text.setPlaceholder("例如：乔木的公众号").onChange((value) => { input.name = value.trim(); }));
     new Setting(panel).setName("AppID").addText((text) => text.setPlaceholder("在公众号后台获取").onChange((value) => { input.appId = value.trim(); }));
     new Setting(panel).setName("AppSecret").addText((text) => {
       text.inputEl.type = "password";
@@ -240,6 +311,7 @@ export class WechatPublishModal extends Modal {
     });
     const status = panel.createDiv({ cls: "qiaomu-wechat-connect-status" });
     status.setAttribute("role", "status");
+    new Setting(panel).setName("更多连接选项").setDesc("多个公众号、直连或自建 Bridge 可在插件设置中管理。").addButton((button) => button.setButtonText("打开插件设置").onClick(() => { this.close(); this.plugin.openSettings(); }));
     const actions = panel.createDiv({ cls: "qiaomu-wechat-connect-actions" });
     const connectButton = actions.createEl("button", { text: "测试并连接", cls: "mod-cta" });
     const account = { id: "new", name: "新公众号" };
@@ -263,7 +335,7 @@ export class WechatPublishModal extends Modal {
         const appSecretId = connectionSecretId(id);
         this.app.secretStorage.setSecret(appSecretId, input.appSecret);
         const previousDefault = this.settings.defaultAccountId;
-        this.settings.connections.push({ id, name: `我的公众号 ${input.appId.slice(-4)}`, mode: input.mode, appId: input.appId, appSecretId, relayUrl: input.mode === "relay" ? input.relayUrl : undefined });
+        this.settings.connections.push({ id, name: input.name || `我的公众号 ${input.appId.slice(-4)}`, mode: input.mode, appId: input.appId, appSecretId, relayUrl: input.mode === "relay" ? input.relayUrl : undefined });
         this.settings.defaultAccountId = id;
         try { await this.plugin.saveSettings(); }
         catch (error) {
@@ -340,6 +412,7 @@ export class WechatPublishModal extends Modal {
         meta: this.meta,
         existingMediaId: mediaId && this.client.canUpdateDraft(this.meta.accountId) ? mediaId : undefined,
         signal: this.abort.signal,
+        cover: this.settings.cover,
         onProgress: (message) => { if (this.contentEl.isConnected) this.statusEl.setText(message); },
       });
       let saved = true;

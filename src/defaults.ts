@@ -1,5 +1,6 @@
 import type { QiaomuPublishSettings, WechatPublishSettings } from "./types";
 import { normalizeArticleStyle, normalizeNoteStyles } from "./article-style";
+import { DEFAULT_COVER_STYLE, normalizeCoverStyle } from "./title-cover";
 import { connectionSecretId, isSecretId } from "./secret-storage";
 
 export const QIAOMU_RELAY_URL = "https://wx.qiaomu.ai";
@@ -15,6 +16,7 @@ export const DEFAULT_SETTINGS: QiaomuPublishSettings = {
     themeId: "qiaomu-podcast",
     articleStyle: {},
     noteStyles: {},
+    cover: DEFAULT_COVER_STYLE,
     author: "",
     openComment: true,
     recordInNote: true,
@@ -39,6 +41,7 @@ export function normalizeWechatSettings(raw: unknown): WechatPublishSettings {
     themeId: text(data.themeId, defaults.themeId) || defaults.themeId,
     articleStyle: normalizeArticleStyle(data.articleStyle),
     noteStyles: normalizeNoteStyles(data.noteStyles),
+    cover: normalizeCoverStyle(data.cover),
     author: text(data.author, defaults.author),
     openComment: flag(data.openComment, defaults.openComment),
     recordInNote: flag(data.recordInNote, defaults.recordInNote),
