@@ -31,8 +31,8 @@ export async function exportHtmlFile(app: App, title: string, html: string, imag
 /** Lays the article out offscreen at WeChat width, then rasterizes it through an SVG foreignObject. */
 export async function exportLongImage(app: App, title: string, html: string, images: ArticleImage[]): Promise<{ name: string; reduced: boolean }> {
   const embedded = await embedWechatImages(app, html, images, true);
-  const host = activeDocument.body.createDiv();
-  host.setCssProps({ position: "fixed", left: "-99999px", top: "0", width: `${LONG_IMAGE_WIDTH}px` });
+  const host = activeDocument.body.createDiv({ cls: "qiaomu-wechat-export-stage" });
+  host.setCssProps({ "--qiaomu-export-width": `${LONG_IMAGE_WIDTH}px` });
   const stage = host.createDiv();
   stage.append(sanitizeHTMLToDom(embedded));
   const root = stage.querySelector<HTMLElement>(".wechat-export-root");

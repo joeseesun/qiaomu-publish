@@ -36,8 +36,8 @@ export class Slider {
     const snapped = Math.round((Math.min(max, Math.max(min, value)) - min) / step) * step + min;
     this.current = Number(Math.min(max, snapped).toFixed(this.decimals));
     const percent = ((this.current - min) / (max - min)) * 100;
-    this.fill.setCssProps({ width: `${percent}%` });
-    this.thumb.setCssProps({ left: `${percent}%` });
+    this.fill.setCssProps({ "--qiaomu-slider-position": `${percent}%` });
+    this.thumb.setCssProps({ "--qiaomu-slider-position": `${percent}%` });
     this.el.setAttribute("aria-valuenow", String(this.current));
   }
 

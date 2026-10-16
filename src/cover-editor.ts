@@ -34,7 +34,7 @@ export class CoverEditor {
     const swatches = row("背景");
     for (const background of COVER_BACKGROUNDS) {
       const chip = swatches.createEl("button", { cls: "qiaomu-wechat-cover-chip", attr: { type: "button", "data-qm-tip": background.name } });
-      chip.setCssProps({ background: background.colors.length === 1 ? background.colors[0]! : `linear-gradient(135deg, ${background.colors.join(", ")})` });
+      chip.setCssProps({ "--qiaomu-chip-background": background.colors.length === 1 ? background.colors[0]! : `linear-gradient(135deg, ${background.colors.join(", ")})` });
       setName(chip, background.name);
       chip.addEventListener("click", () => this.change({ background: background.id }));
       this.chips.set(background.id, chip);
@@ -56,7 +56,7 @@ export class CoverEditor {
     this.inks.set("", auto);
     for (const [hex, name] of INK_PRESETS) {
       const chip = ink.createEl("button", { cls: "qiaomu-wechat-cover-chip", attr: { type: "button", "data-qm-tip": name } });
-      chip.setCssProps({ background: hex });
+      chip.setCssProps({ "--qiaomu-chip-background": hex });
       setName(chip, name);
       chip.addEventListener("click", () => this.change({ color: hex }));
       this.inks.set(hex, chip);

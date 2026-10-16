@@ -107,13 +107,13 @@ export abstract class SearchPicker<T extends PickerItem> {
     const above = rect.top - margin;
     const useBelow = below >= 260 || below >= above;
     const room = Math.max(160, (useBelow ? below : above) - 6);
-    this.pop.setCssProps({
+    this.pop.setCssStyles({
       left: `${Math.min(Math.max(margin, left), view.innerWidth - width - margin)}px`,
       width: `${width}px`,
       top: useBelow ? `${rect.bottom + 6}px` : "auto",
       bottom: useBelow ? "auto" : `${view.innerHeight - rect.top + 6}px`,
-      "--qm-pop-max": `${Math.min(440, room)}px`,
     });
+    this.pop.setCssProps({ "--qm-pop-max": `${Math.min(440, room)}px` });
   }
 
   private render(): void {

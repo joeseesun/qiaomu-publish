@@ -17,7 +17,7 @@ export function themeSwatches(theme?: WechatExportTheme, primary?: string): stri
 
 function strip(parent: HTMLElement, theme?: WechatExportTheme, primary?: string): HTMLElement {
   const el = parent.createSpan({ cls: "qiaomu-wechat-swatches", attr: { "aria-hidden": "true" } });
-  for (const color of themeSwatches(theme, primary)) el.createSpan().setCssProps({ "background-color": color });
+  for (const color of themeSwatches(theme, primary)) el.createSpan().setCssProps({ "--qiaomu-swatch-color": color });
   return el;
 }
 

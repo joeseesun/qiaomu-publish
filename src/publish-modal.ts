@@ -247,7 +247,7 @@ export class WechatPublishModal extends Modal {
     const paper = computed && computed !== "rgba(0, 0, 0, 0)" ? computed : "#ffffff";
     const channels = (paper.match(/\d+/g) ?? ["255", "255", "255"]).slice(0, 3).map(Number);
     const dark = (0.299 * channels[0]! + 0.587 * channels[1]! + 0.114 * channels[2]!) < 140;
-    this.paper.setCssProps({ "background-color": paper });
+    this.paper.setCssProps({ "--qiaomu-paper-color": paper });
     this.screen.setCssProps({ "--qm-paper": paper, "--qm-ink": dark ? "#f5f5f5" : "#111111" });
     this.refreshChecks();
   }

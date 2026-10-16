@@ -354,7 +354,7 @@ export class WechatPreviewView extends ItemView {
   private paintPaper(): void {
     const root = this.shadow.querySelector<HTMLElement>(".wechat-export-root");
     const color = root ? this.shadow.ownerDocument.defaultView?.getComputedStyle(root).backgroundColor : "";
-    this.paper.setCssProps({ "background-color": color && color !== "rgba(0, 0, 0, 0)" ? color : "#ffffff" });
+    this.paper.setCssProps({ "--qiaomu-paper-color": color && color !== "rgba(0, 0, 0, 0)" ? color : "#ffffff" });
   }
 
   private appearance() {

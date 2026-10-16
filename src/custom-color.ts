@@ -30,10 +30,10 @@ export class CustomColor {
   private show(hex: string | null, active: boolean): void {
     this.el.toggleClass("is-active", active);
     if (active && hex) {
-      this.swatch.setCssProps({ background: hex });
+      this.swatch.setCssProps({ "--qiaomu-chip-background": hex });
       this.text.setText(hex.toUpperCase());
     } else {
-      this.swatch.setCssProps({ background: "" });
+      this.swatch.setCssProps({ "--qiaomu-chip-background": "" });
       this.text.setText("自定义");
     }
   }
