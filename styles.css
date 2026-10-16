@@ -389,3 +389,9 @@
 .qiaomu-wechat-custom-swatch { flex: none; width: 16px; height: 16px; border-radius: 50%; background: conic-gradient(#ff5f5f, #ffd24d, #5fd068, #4dc6ff, #7a6bff, #ff5fb0, #ff5f5f); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .14); }
 .qiaomu-wechat-custom-text { font-variant-numeric: tabular-nums; }
 .qiaomu-wechat-custom-input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; opacity: 0; cursor: pointer; }
+/* Hide note metadata only while this plugin owns the active view; no Home dependency. */
+body:has(.workspace-leaf.mod-active > .workspace-leaf-content:is(
+  [data-type="qiaomu-wechat-preview"]
+)) .status-bar {
+  display: none;
+}
