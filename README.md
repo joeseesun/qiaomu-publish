@@ -14,7 +14,7 @@ Write in Obsidian. Preview beautifully. Send to WeChat drafts.
 [![Checks](https://github.com/joeseesun/qiaomu-publish/actions/workflows/check.yml/badge.svg)](https://github.com/joeseesun/qiaomu-publish/actions/workflows/check.yml)
 [![License](https://img.shields.io/badge/license-MIT-18181b?style=flat-square)](LICENSE)
 
-[**下载安装**](#安装) · [功能演示](#看看它怎么帮你) · [版本更新](https://github.com/joeseesun/qiaomu-publish/releases) · [反馈问题](https://github.com/joeseesun/qiaomu-publish/issues)
+[**从官方社区安装**](https://community.obsidian.md/plugins/qiaomu-publish) · [功能演示](#看看它怎么帮你) · [版本更新](https://github.com/joeseesun/qiaomu-publish/releases) · [反馈问题](https://github.com/joeseesun/qiaomu-publish/issues)
 
 </div>
 
@@ -32,14 +32,25 @@ Write in Obsidian. Preview beautifully. Send to WeChat drafts.
 
 需要 **Obsidian 1.11.4 或更高版本**。
 
-[**前往 Releases 下载最新版本 →**](https://github.com/joeseesun/qiaomu-publish/releases/latest)
+[**前往 Obsidian 官方社区安装 →**](https://community.obsidian.md/plugins/qiaomu-publish)
 
-1. 下载同一版本的 `main.js`、`manifest.json`、`styles.css`。
+1. 打开官方页面，点击 **Add to Obsidian**，在 Obsidian 中选择 **安装 → 启用**。
+2. 打开笔记，在命令面板运行 **「实时预览当前笔记的公众号排版」**。
+
+也可以直接在 Obsidian 的「设置 → 第三方插件 → 浏览」中搜索 **Qiaomu Publish**，安装并启用。
+
+后续更新可在「设置 → 第三方插件」中检查并安装，无需手动替换文件。
+
+<details>
+<summary>备用方式：手动安装</summary>
+
+1. 从 [GitHub Releases](https://github.com/joeseesun/qiaomu-publish/releases/latest) 下载同一版本的 `main.js`、`manifest.json`、`styles.css`。
 2. 在你的库中创建 `.obsidian/plugins/qiaomu-publish/`，将三个文件放进去。
 3. 重启 Obsidian，在「设置 → 第三方插件」启用 **Qiaomu Publish**。
-4. 打开笔记，在命令面板运行 **「实时预览当前笔记的公众号排版」**。
 
-也可查看 [Obsidian 社区目录](https://community.obsidian.md/plugins/qiaomu-publish)。若客户端尚未显示条目，可先使用上面的手动安装方式。更新时替换这三个文件，保留 `data.json`。
+手动更新时替换这三个文件，保留 `data.json`。
+
+</details>
 
 ## 看看它怎么帮你
 
@@ -161,7 +172,7 @@ npm run dev     # 开发监听
 
 Choose from 42 searchable themes, adjust typography and spacing, and keep a different appearance for each note. Code highlighting, formula and Mermaid image conversion, generated title covers, standalone HTML and long PNG exports help reduce repetitive publishing work. Direct and Qiaomu relay connections can update the existing draft instead of creating duplicates.
 
-To install, download `main.js`, `manifest.json` and `styles.css` from the [latest release](https://github.com/joeseesun/qiaomu-publish/releases/latest), place them in your vault’s `.obsidian/plugins/qiaomu-publish/` folder, restart Obsidian, and enable the plugin. Obsidian 1.11.4 or later is required. The current plugin interface is Chinese.
+Install from the [official Obsidian community listing](https://community.obsidian.md/plugins/qiaomu-publish): click **Add to Obsidian**, then **Install → Enable**. You can also search for **Qiaomu Publish** under **Settings → Community plugins → Browse**. Use Community plugins to check for future updates. Manual installation from [GitHub Releases](https://github.com/joeseesun/qiaomu-publish/releases/latest) remains available as a fallback. Obsidian 1.11.4 or later is required. The current plugin interface is Chinese.
 
 Sending drafts requires an eligible WeChat Official Account, API credentials and IP allowlisting. Credentials use Obsidian SecretStorage; the optional relay receives them and article content over HTTPS. Remote images and explicit connection operations use the network. The plugin never mass-publishes articles.
 
