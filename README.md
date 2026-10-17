@@ -96,10 +96,12 @@ Write in Obsidian. Preview beautifully. Send to WeChat drafts.
 
 ### 04 / 一份内容，多种交付方式
 
-- **复制公众号格式**：在公众号编辑器里粘贴，再检查发布效果。
+- **复制公众号格式**：复制排版与嵌入的本地图片。粘贴到公众号编辑器后仍需检查图片；需要自动上传图片时请选择「发送草稿」。
 - **发送草稿**：正文图片和封面通过所选账号连接上传。
 - **导出 HTML**：带内联样式与嵌入图片，适合保存和分享。
 - **导出长图 PNG**：适合发给朋友或作为文章预览。超长文章会降低分辨率，并给出提示。
+
+支持 Obsidian 图片嵌入、Markdown 行内与引用式图片、库内 HTML 图片及嵌入笔记的附件。相同附件重复引用只上传一次；本地静态 SVG 自动转成 PNG。无法找到的图片会阻止复制、导出和发送，并提示修正引用。包含外部资源或动态内容的 SVG 请先自行导出为 PNG。
 
 [查看这篇演示笔记导出的长图](docs/assets/article-export.png)。导出遇到无法读取的远程图片时会提示处理，避免悄悄漏图。
 
@@ -150,11 +152,11 @@ source_url: https://example.com/article
 
 ```bash
 npm ci
-npm run check   # TypeScript、270 项测试、生产构建
+npm run check   # TypeScript、292 项测试、生产构建
 npm run dev     # 开发监听
 ```
 
-[验收记录](docs/qa/2026-10-17-release.md) · [第三方许可](THIRD_PARTY_NOTICES.md) · [提交问题](https://github.com/joeseesun/qiaomu-publish/issues/new)
+[本地图片修复验收](docs/qa/2026-10-17-image-fix.md) · [0.2.0 验收记录](docs/qa/2026-10-17-release.md) · [第三方许可](THIRD_PARTY_NOTICES.md) · [提交问题](https://github.com/joeseesun/qiaomu-publish/issues/new)
 
 ## 作者
 

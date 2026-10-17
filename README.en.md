@@ -70,3 +70,7 @@ npm run dev
 [QA record](docs/qa/2026-10-17-release.md) · [Third-party notices](THIRD_PARTY_NOTICES.md) · [MIT license](LICENSE)
 
 By 向阳乔木 — [qiaomu.ai](https://qiaomu.ai/) · [Blog](https://blog.qiaomu.ai/) · [X @vista8](https://x.com/vista8). Theme names describe visual inspiration and do not imply brand affiliation.
+
+### Local images in 0.2.1
+
+Wikilinks, inline/reference Markdown images, vault HTML images and attachments in embedded notes resolve to the file actually shown by Obsidian. Repeated local attachments upload once per draft operation. Static local SVGs become PNGs; SVGs with external resources or dynamic content must be exported to PNG first. Missing images block copy, export and draft submission with a repair message. Copy embeds local image bytes but does not upload them to WeChat; use Send to drafts for automatic uploads.
