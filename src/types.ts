@@ -1,6 +1,18 @@
 export interface QiaomuPublishSettings {
   schemaVersion: 1;
   wechat: WechatPublishSettings;
+  /** X, Zhihu and Xiaohongshu drafts, written through the Qiaomu Clipper browser extension. */
+  external: ExternalPublishSettings;
+}
+
+export interface ExternalPublishSettings {
+  /** Xiaohongshu card look: template id, colour id inside it (falls back to the template's first), font (empty = the template's own) and pagination. */
+  cardTemplate: string;
+  cardPalette: string;
+  cardFont: string;
+  cardPagination: "flow" | "h2";
+  /** Platforms whose one-line tip at the top of the publish window the person has closed. */
+  dismissedTips: string[];
 }
 
 export interface WechatPublishSettings {

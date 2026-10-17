@@ -13,9 +13,13 @@ import type QiaomuPublishPlugin from "./main";
 import { QIAOMU_RELAY_CODE, QIAOMU_RELAY_URL } from "./defaults";
 import { resolveArticleAppearance } from "./article-style";
 import type { WechatArticleStyle } from "./types";
-import { CoverEditor } from "./cover-editor";
+import { CoverSection } from "./cover/cover-section";
+import { COVER_SPECS } from "./cover/spec";
+import { loadArticleImage } from "./external/assets";
+import { noteImageCandidates } from "./external/prepare";
 import { ThemePicker } from "./theme-picker";
 import { connectionSecretId } from "./secret-storage";
+import { renderPlatformSwitch } from "./platform-switch";
 
 export class WechatPublishModal extends Modal {
   private readonly component = new Component();
@@ -35,7 +39,7 @@ export class WechatPublishModal extends Modal {
   private publishButton!: HTMLButtonElement;
   private copyButton!: HTMLButtonElement;
   private draftAction: "update" | "new" = "update";
-  private coverEditor: CoverEditor | null = null;
+  private cover: CoverSection | null = null;
   private picker!: ThemePicker;
   private paper!: HTMLElement;
   private screen!: HTMLElement;
@@ -53,7 +57,8 @@ export class WechatPublishModal extends Modal {
   override onOpen(): void {
     this.component.load();
     this.modalEl.addClass("qiaomu-wechat-modal");
-    this.setTitle("发布到公众号草稿箱");
+    this.setTitle("发布");
+    renderPlatformSwitch(this.contentEl, "wechat", (choice) => { this.close(); this.plugin.openPublish(this.file, choice); });
     this.statusEl = this.contentEl.createDiv({ cls: "qiaomu-wechat-status", text: "正在排版…" });
     this.statusEl.setAttribute("role", "status");
     this.statusEl.setAttribute("aria-live", "polite");
@@ -63,7 +68,7 @@ export class WechatPublishModal extends Modal {
   override onClose(): void {
     if (this.previewTimer !== null) window.clearTimeout(this.previewTimer);
     if (this.checksTimer !== null) window.clearTimeout(this.checksTimer);
-    this.coverEditor?.destroy();
+    this.cover?.destroy();
     this.picker?.destroy();
     this.abort?.abort();
     this.note?.dispose();
@@ -157,7 +162,7 @@ export class WechatPublishModal extends Modal {
     this.picker.setValue(resolveWechatTheme(this.themeId).id, this.articleStyle.primaryColor);
 
     new Setting(form).setName("标题").addText((text) => {
-      text.setValue(meta.title).onChange((value) => { meta.title = value.trim(); this.coverEditor?.sync(); this.scheduleChecks(); });
+      text.setValue(meta.title).onChange((value) => { meta.title = value.trim(); this.cover?.syncTitle(); this.scheduleChecks(); });
       text.inputEl.addClass("qiaomu-wechat-wide");
     });
     new Setting(form).setName("作者").addText((text) => text.setValue(meta.author).onChange((value) => { meta.author = value.trim(); this.scheduleChecks(); }));
@@ -166,10 +171,25 @@ export class WechatPublishModal extends Modal {
       area.inputEl.rows = 2;
       area.inputEl.addClass("qiaomu-wechat-wide");
     });
-    new Setting(form).setName("封面").setDesc(this.coverLabel(note.images));
-    this.coverEditor?.destroy();
-    this.coverEditor = null;
-    if (!resolveCover(this.app, this.file.path, meta, note.images)) this.renderCoverEditor(form);
+    this.cover?.destroy();
+    this.cover = new CoverSection(form, {
+      app: this.app, spec: COVER_SPECS.wechat, title: () => this.meta?.title ?? "",
+      candidates: () => noteImageCandidates(this.app, note),
+      initial: async () => {
+        const found = resolveCover(this.app, this.file.path, meta, note.images);
+        if (!found) return null;
+        const loaded = await loadArticleImage(this.app, found.kind === "url" ? { id: "cover", kind: "remote", name: found.url.split("/").pop() || "cover", url: found.url } : found.image);
+        return { ...loaded, origin: meta.cover ? "笔记属性 cover" : "笔记第一张图" };
+      },
+      allowNone: false,
+      fallbackMode: "title",
+      style: () => this.settings.cover,
+      updateStyle: (style) => { this.settings.cover = style; void this.plugin.saveSettings().catch(() => new Notice("封面样式保存失败")); },
+      coverText: meta.coverText,
+      onCoverText: (text) => { meta.coverText = text; },
+      onChange: () => this.scheduleChecks(),
+    });
+    void this.cover.start();
 
     this.checksEl = form.createEl("ul", { cls: "qiaomu-wechat-checks" });
     setName(this.checksEl, "发布前检查");
@@ -207,29 +227,6 @@ export class WechatPublishModal extends Modal {
     this.checksTimer = window.setTimeout(() => { this.checksTimer = null; if (this.contentEl.isConnected) this.refreshChecks(); }, 250);
   }
 
-  /** The generated cover is drawn live with the same code that makes the uploaded image. */
-  private renderCoverEditor(container: HTMLElement): void {
-    this.coverEditor?.destroy();
-    new Setting(container).setName("封面文字").setDesc("留空则用上面的标题。封面上的大字可以比标题更短、更有冲击力。")
-      .addText((text) => text.setPlaceholder(this.meta?.title ?? "").setValue(this.meta?.coverText ?? "").onChange((value) => { this.meta!.coverText = value.trim(); this.coverEditor?.sync(); }));
-    this.coverEditor = new CoverEditor(container, {
-      title: () => this.meta?.coverText || this.meta?.title || "",
-      style: () => this.settings.cover,
-      update: (style) => {
-        this.settings.cover = style;
-        void this.plugin.saveSettings().catch(() => new Notice("封面样式保存失败"));
-      },
-    });
-  }
-
-  private coverLabel(images: ArticleImage[]): string {
-    const cover = resolveCover(this.app, this.file.path, this.meta!, images);
-    if (!cover && this.meta!.cover) return `找不到封面「${this.meta!.cover}」，请检查笔记属性 cover。`;
-    if (!cover) return "这篇笔记没有图片，发送时会自动生成标题封面。";
-    if (this.meta!.cover) return `属性 cover：${this.meta!.cover}`;
-    return `正文第一张图片：${cover.kind === "url" ? cover.url : cover.image.name}`;
-  }
-
   private renderPreview(): void {
     if (!this.note) return;
     this.paper.parentElement?.querySelector(".qiaomu-wechat-preview-loading")?.remove();
@@ -260,7 +257,7 @@ export class WechatPublishModal extends Modal {
     }
     const hasCover = true; // A text-only note receives a generated title cover.
     const checks = preflight(this.meta, this.wechatHtml, hasCover, this.note.warnings, this.note.imageErrors);
-    if (this.meta.cover && !resolveCover(this.app, this.file.path, this.meta, this.note.images)) {
+    if (this.meta.cover && !this.cover?.hasImage && this.cover?.mode !== "title" && !resolveCover(this.app, this.file.path, this.meta, this.note.images)) {
       checks.unshift({ level: "error", message: `找不到指定封面：${this.meta.cover}`, fix: "请修正 cover 属性，或删除它以生成标题封面。" });
     }
     if (this.clientError) checks.unshift({ level: "error", message: this.clientError, fix: "请在上方连接公众号；也可以先复制公众号格式。" });
@@ -404,6 +401,8 @@ export class WechatPublishModal extends Modal {
     const meta = { ...this.meta };
     const html = this.wechatHtml;
     const cover = { ...this.settings.cover };
+    let coverImage: { data: ArrayBuffer; mime: string; name: string } | undefined;
+    try { coverImage = (await this.cover?.result()) ?? undefined; } catch (error) { this.setBusy(false, `封面生成失败：${error instanceof Error ? error.message : String(error)}`); return; }
     const recordInNote = this.settings.recordInNote;
     const existing = this.draftAction === "update" ? this.existingMediaId() : "";
     const mediaId = existing && this.client.canUpdateDraft(meta.accountId) ? existing : "";
@@ -427,6 +426,7 @@ export class WechatPublishModal extends Modal {
         existingMediaId: mediaId || undefined,
         signal: this.abort.signal,
         cover,
+        coverImage,
         onProgress: (message) => { if (this.contentEl.isConnected) this.statusEl.setText(message); },
       });
       let saved = true;

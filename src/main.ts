@@ -3,6 +3,9 @@ import { DEFAULT_SETTINGS, legacyAgentSettings, normalizeSettings } from "./defa
 import { QiaomuPublishSettingTab } from "./settings-tab";
 import type { QiaomuPublishSettings, WechatArticleAppearance } from "./types";
 import { WechatPublishModal } from "./publish-modal";
+import { ExternalPublishModal } from "./external-publish-modal";
+import { TARGET_LABEL, type PublishTargetId } from "./bridge/protocol";
+import type { PublishChoice } from "./platform-switch";
 import { WechatPreviewView, WECHAT_PREVIEW_VIEW } from "./preview-view";
 
 export default class QiaomuPublishPlugin extends Plugin {
@@ -43,6 +46,18 @@ export default class QiaomuPublishPlugin extends Plugin {
         return true;
       },
     });
+    for (const target of ["x", "zhihu", "xhs"] as const) {
+      this.addCommand({
+        id: `publish-${target}-draft`,
+        name: `发布当前笔记到${TARGET_LABEL[target]}草稿`,
+        checkCallback: (checking) => {
+          const file = this.app.workspace.getActiveFile();
+          if (file?.extension !== "md") return false;
+          if (!checking) this.openExternalPublish(file, target);
+          return true;
+        },
+      });
+    }
     this.addCommand({
       id: "preview-wechat-note",
       name: "实时预览当前笔记的公众号排版",
@@ -58,6 +73,7 @@ export default class QiaomuPublishPlugin extends Plugin {
         if (!(file instanceof TFile) || file.extension !== "md") return;
         menu.addItem((item) => item.setTitle("预览公众号排版").setIcon("smartphone").setSection("action").onClick(() => void this.openWechatPreview(file)));
         menu.addItem((item) => item.setTitle("发布到公众号草稿箱").setIcon("send").setSection("action").onClick(() => this.openWechatPublish(file)));
+        for (const target of ["x", "zhihu", "xhs"] as const) menu.addItem((item) => item.setTitle(`发布到${TARGET_LABEL[target]}草稿`).setIcon("send").setSection("action").onClick(() => this.openExternalPublish(file, target)));
       })
     );
   }
@@ -97,6 +113,16 @@ export default class QiaomuPublishPlugin extends Plugin {
 
   openWechatPublish(file: TFile): void {
     this.showModal(new WechatPublishModal(this.app, file, this));
+  }
+
+  /** Opens the publish window for `choice`; the switch row inside every window calls this to hop between platforms. */
+  openPublish(file: TFile, choice: PublishChoice): void {
+    if (choice === "wechat") this.openWechatPublish(file);
+    else this.openExternalPublish(file, choice);
+  }
+
+  openExternalPublish(file: TFile, target: PublishTargetId): void {
+    this.showModal(new ExternalPublishModal(this.app, file, this, target));
   }
 
   showModal(modal: Modal): void {

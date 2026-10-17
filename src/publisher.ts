@@ -1,4 +1,5 @@
-import { DEFAULT_COVER_STYLE, renderTitleCover } from "./title-cover";
+import { coverFont, DEFAULT_COVER_STYLE, renderTitleCover } from "./title-cover";
+import { ensureBundledFont, usesBundledFont } from "./external/bundled-font";
 import type { WechatCoverStyle } from "./types";
 import { type App, getLinkpath, TFile } from "obsidian";
 import type { ArticleImage, RenderedNote } from "./render-note";
@@ -94,14 +95,16 @@ export async function publishDraft(options: {
   signal?: AbortSignal;
   existingMediaId?: string;
   cover?: WechatCoverStyle;
+  /** The cover chosen in the window, already cut to 900x383 (a picture or the generated title cover). Replaces every other cover rule. */
+  coverImage?: { data: ArrayBuffer; mime: string; name: string };
   onProgress?: PublishProgress;
 }): Promise<{ mediaId: string; accountName: string }> {
   const { app, client, note, onProgress } = options;
   assertImageSources(options.wechatHtml, note.images, note.imageErrors);
   const meta = { ...options.meta };
   const coverStyle = { ...(options.cover ?? DEFAULT_COVER_STYLE) };
-  const cover = resolveCover(app, options.file.path, meta, note.images);
-  if (meta.cover && !cover) throw new Error(`找不到指定封面：${meta.cover}`);
+  const cover = options.coverImage ? null : resolveCover(app, options.file.path, meta, note.images);
+  if (!options.coverImage && meta.cover && !cover) throw new Error(`找不到指定封面：${meta.cover}`);
   if (options.signal?.aborted) throw new Error("已取消");
   const uploadable = note.images.filter((image) => image.kind !== "remote");
   const sources = new Map<string, string>();
@@ -122,9 +125,14 @@ export async function publishDraft(options: {
 
   let thumbMediaId = "";
   let coverUrl = "";
-  if (!cover) {
+  if (options.coverImage) {
+    onProgress?.("上传封面");
+    const result = await client.uploadImage(meta.accountId, "cover", options.coverImage.name, options.coverImage.mime, options.coverImage.data);
+    if (!result.media_id) throw new Error("封面上传没有返回 media_id");
+    thumbMediaId = result.media_id;
+  } else if (!cover) {
     onProgress?.("生成标题封面");
-    const data = await renderTitleCover(meta.coverText || meta.title, coverStyle);
+    const data = await renderTitleCover(meta.coverText || meta.title, coverStyle, () => usesBundledFont(coverFont(coverStyle.font).stack) ? ensureBundledFont() : Promise.resolve());
     if (options.signal?.aborted) throw new Error("已取消");
     const result = await client.uploadImage(meta.accountId, "cover", "title-cover.jpg", "image/jpeg", data);
     if (!result.media_id) throw new Error("标题封面上传没有返回 media_id");

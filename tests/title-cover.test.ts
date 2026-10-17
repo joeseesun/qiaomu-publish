@@ -31,3 +31,14 @@ describe("generated title cover", () => {
     expect(wrapTitle("短标题", measure, 640)).toEqual(["短标题"]);
   });
 });
+
+describe("title cover at other platform sizes", () => {
+  it("centres the title on the platform's own canvas", async () => {
+    const { drawTitleCover } = await import("../src/title-cover");
+    const calls: { x: number; y: number }[] = [];
+    const context = { font: "", fillRect() {}, createLinearGradient: () => ({ addColorStop() {} }), measureText: (text: string) => ({ width: text.length * 20 }), fillText: (_text: string, x: number, y: number) => calls.push({ x, y }) };
+    drawTitleCover(context as never, "海报标题", { background: "navy", font: "sans" }, { width: 1500, height: 600 });
+    expect(calls.length).toBeGreaterThan(0);
+    expect(calls.every((call) => call.x === 750 && call.y > 0 && call.y < 600)).toBe(true);
+  });
+});

@@ -1,8 +1,9 @@
+import { bundledFontReady, ensureBundledFont, usesBundledFont } from "./external/bundled-font";
 import { setName } from "./accessible-name";
 import { CustomColor } from "./custom-color";
 import { FontPicker } from "./font-picker";
 import { Slider } from "./slider";
-import { COVER_BACKGROUNDS, COVER_HEIGHT, COVER_SIZE, COVER_WIDTH, coverBackground, coverInk, drawTitleCover } from "./title-cover";
+import { COVER_BACKGROUNDS, COVER_SIZE, type CoverSize, coverBackground, coverFont, coverInk, drawTitleCover, WECHAT_COVER_SIZE } from "./title-cover";
 import type { WechatCoverStyle } from "./types";
 
 const INK_PRESETS: [string, string][] = [["#ffffff", "白色"], ["#1a1a1a", "近黑"], ["#c2410c", "橙红"], ["#b45309", "琥珀"]];
@@ -19,10 +20,12 @@ export class CoverEditor {
   private readonly color: CustomColor;
   private readonly font: FontPicker;
   private autoSize!: HTMLButtonElement;
+  private get dims(): CoverSize { return this.options.size ?? WECHAT_COVER_SIZE; }
 
-  constructor(parent: HTMLElement, private readonly options: { title: () => string; style: () => WechatCoverStyle; update: (style: WechatCoverStyle) => void }) {
+  constructor(parent: HTMLElement, private readonly options: { title: () => string; style: () => WechatCoverStyle; update: (style: WechatCoverStyle) => void; size?: CoverSize }) {
     this.el = parent.createDiv({ cls: "qiaomu-wechat-cover-editor" });
-    this.canvas = this.el.createEl("canvas", { cls: "qiaomu-wechat-cover-canvas", attr: { width: String(COVER_WIDTH), height: String(COVER_HEIGHT), role: "img" } });
+    this.canvas = this.el.createEl("canvas", { cls: "qiaomu-wechat-cover-canvas", attr: { width: String(this.dims.width), height: String(this.dims.height), role: "img" } });
+    this.canvas.setCssProps({ "--qiaomu-cover-aspect": `${this.dims.width} / ${this.dims.height}` });
     setName(this.canvas, "标题封面预览");
 
     const row = (label: string) => {
@@ -76,7 +79,10 @@ export class CoverEditor {
   /** Draws with a temporary change (a colour still being dragged) without saving it. */
   private draw(patch: Partial<WechatCoverStyle> = {}): void {
     const context = this.canvas.getContext("2d");
-    if (context) drawTitleCover(context, this.options.title().trim() || "标题", { ...this.options.style(), ...patch });
+    const style = { ...this.options.style(), ...patch };
+    if (context) drawTitleCover(context, this.options.title().trim() || "标题", style, this.dims);
+    // The bundled font registers on first use; draw again once it is there.
+    if (usesBundledFont(coverFont(style.font).stack) && !bundledFontReady()) void ensureBundledFont().then((loaded) => { if (loaded && this.canvas.isConnected) this.draw(patch); });
   }
 
   /** Redraws after the title or any control changes. */

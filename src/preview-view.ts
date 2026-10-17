@@ -1,4 +1,5 @@
-import { ItemView, MarkdownView, Menu, Notice, sanitizeHTMLToDom, setIcon, TFile, type WorkspaceLeaf } from "obsidian";
+import { TARGET_LABEL } from "./bridge/protocol";
+import { ItemView, MarkdownView, Menu, Notice, Platform, sanitizeHTMLToDom, setIcon, TFile, type WorkspaceLeaf } from "obsidian";
 import type QiaomuPublishPlugin from "./main";
 import { buildWechatHtml, resolveWechatTheme } from "./export-html";
 import { renderNoteForWechat, type RenderedNote } from "./render-note";
@@ -168,6 +169,11 @@ export class WechatPreviewView extends ItemView {
       if (this.scrollSync) this.syncFromSource();
     }));
     menu.addSeparator();
+    const file = this.file;
+    if (file) {
+      for (const target of ["x", "zhihu", "xhs"] as const) menu.addItem((item) => item.setTitle(`发布到${TARGET_LABEL[target]}草稿`).setIcon("send").onClick(() => this.plugin.openExternalPublish(file, target)));
+      menu.addSeparator();
+    }
     menu.addItem((item) => item.setTitle("公众号设置").setIcon("settings").onClick(() => this.plugin.openSettings()));
     menu.addItem((item) => item.setTitle("导出 HTML 文件").setIcon("file-code").onClick(() => void this.exportAs("html")));
     menu.addItem((item) => item.setTitle("导出长图 PNG").setIcon("image-down").onClick(() => void this.exportAs("image")));
@@ -338,8 +344,19 @@ export class WechatPreviewView extends ItemView {
       setIcon(row.createSpan({ cls: "qiaomu-wechat-empty-file" }), "file-text");
       row.createSpan({ cls: "qiaomu-wechat-empty-name", text: file.basename });
       if (file.parent && !file.parent.isRoot()) row.createSpan({ cls: "qiaomu-wechat-empty-folder", text: file.parent.name });
-      row.addEventListener("click", () => void this.app.workspace.getLeaf("tab").openFile(file));
+      row.addEventListener("click", () => void this.openInMain(file));
     }
+  }
+
+  /**
+   * Opens a note in the editor area and points the preview at it at once. A plain `getLeaf("tab")` opens the tab next to the
+   * active leaf, which is this side panel, so the note landed beside the preview and the preview kept waiting for a second click.
+   */
+  private async openInMain(file: TFile): Promise<void> {
+    const { workspace } = this.app;
+    const leaf = (Platform.isDesktopApp ? workspace.getMostRecentLeaf(workspace.rootSplit) : null) ?? workspace.getLeaf("tab");
+    await leaf.openFile(file);
+    this.setFile(file);
   }
 
   private setReady(ready: boolean): void {
