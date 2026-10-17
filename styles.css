@@ -175,7 +175,7 @@
 .qiaomu-wechat-modal .qiaomu-wechat-picker-button { border: 1px solid var(--qm-line); }
 
 .qiaomu-wechat-cover-editor { display: flex; flex-direction: column; gap: 10px; padding: 4px 0 12px; }
-.qiaomu-wechat-cover-canvas { width: 100%; max-width: 420px; aspect-ratio: 900 / 383; border-radius: 8px; box-shadow: 0 0 0 1px var(--qm-line); }
+.qiaomu-wechat-cover-canvas { width: 100%; max-width: 420px; aspect-ratio: var(--qiaomu-cover-aspect, 900 / 383); border-radius: 8px; box-shadow: 0 0 0 1px var(--qm-line); }
 .qiaomu-wechat-cover-swatches { display: flex; flex-wrap: wrap; gap: 8px; }
 .qiaomu-wechat-modal .qiaomu-wechat-cover-chip { background: var(--qiaomu-chip-background); position: relative; width: 22px; height: 22px; min-height: 0; padding: 0; border: 0; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .14); cursor: pointer; }
 .qiaomu-wechat-modal .qiaomu-wechat-cover-chip[aria-pressed="true"] { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .14), 0 0 0 2px var(--background-primary), 0 0 0 3.5px var(--text-normal); }
@@ -400,3 +400,126 @@ body:has(.workspace-leaf.mod-active > .workspace-leaf-content:is(
 .qiaomu-wechat-preview-loading { padding: 48px 0; text-align: center; color: var(--text-muted); font-size: 13px; }
 
 .qiaomu-wechat-export-stage { position: fixed; left: -99999px; top: 0; width: var(--qiaomu-export-width); }
+
+/* Browser-based platforms (X, Zhihu, Xiaohongshu) */
+.qiaomu-external-intro { margin: 0 0 8px; color: var(--text-muted); font-size: var(--font-ui-small); }
+.qiaomu-external-modal .qiaomu-wechat-footer { margin-top: 16px; }
+.qiaomu-external-modal input.is-over { border-color: var(--text-error); }
+.qiaomu-external-cards { padding: 4px 0 0; }
+.qiaomu-external-cards.is-empty { display: none; }
+.qiaomu-external-card { position: relative; flex: none; width: 96px; aspect-ratio: 3 / 4; border: 1px solid var(--background-modifier-border); border-radius: 8px; overflow: hidden; background: var(--background-secondary); }
+.qiaomu-external-card-number { position: absolute; right: 4px; bottom: 4px; min-width: 18px; padding: 0 5px; border-radius: 9px; background: var(--text-normal); color: var(--background-primary); font-size: var(--font-ui-smaller); line-height: 18px; text-align: center; }
+.qiaomu-publish-card-stage { position: fixed; left: -20000px; top: 0; visibility: hidden; pointer-events: none; }
+.qiaomu-platform-switch { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 0 0 12px; }
+.qiaomu-platform-switch-label { margin-right: 4px; color: var(--text-muted); font-size: var(--font-ui-small); }
+button.qiaomu-platform-chip:not(.clickable-icon) { height: 30px; padding: 0 14px; border: 1px solid var(--background-modifier-border); border-radius: 15px; background: transparent; box-shadow: none; color: var(--text-muted); font-size: var(--font-ui-small); cursor: pointer; }
+button.qiaomu-platform-chip:not(.clickable-icon):hover { background: color-mix(in srgb, var(--text-normal) 6%, transparent); color: var(--text-normal); }
+button.qiaomu-platform-chip.is-active:not(.clickable-icon) { border-color: var(--text-normal); background: var(--text-normal); color: var(--background-primary); cursor: default; }
+button.qiaomu-platform-chip:focus-visible { outline: 2px solid var(--text-normal); outline-offset: 2px; box-shadow: none; }
+.qiaomu-card-chips { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.qiaomu-card-swatches { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; max-width: 360px; }
+button.qiaomu-card-swatch:not(.clickable-icon) { position: relative; box-sizing: border-box; width: 28px; height: 28px; min-width: 28px; padding: 0; border: 1px solid var(--background-modifier-border-hover); border-radius: 50%; background: var(--qiaomu-swatch); box-shadow: none; cursor: pointer; }
+button.qiaomu-card-swatch:not(.clickable-icon):hover { background: var(--qiaomu-swatch); filter: brightness(.96); }
+button.qiaomu-card-swatch.is-active:not(.clickable-icon) { outline: 2px solid var(--text-normal); outline-offset: 2px; }
+button.qiaomu-card-swatch:focus-visible { outline: 2px solid var(--text-normal); outline-offset: 2px; box-shadow: none; }
+
+.qiaomu-external-text { display: block; width: 100%; min-height: 150px; margin: 2px 0 6px; padding: 10px 12px; border: 1px solid var(--background-modifier-border); border-radius: 8px; background: var(--background-primary); box-shadow: none; color: var(--text-normal); font-size: var(--font-ui-small); line-height: 1.6; resize: vertical; }
+.qiaomu-external-text:focus-visible { border-color: var(--text-normal); outline: none; box-shadow: 0 0 0 1px var(--text-normal); }
+.qiaomu-external-modal .setting-item-description.is-over { color: var(--text-error); }
+.qiaomu-external-note { margin: 0 0 8px; font-size: var(--font-ui-smaller); color: var(--text-muted); }
+.qiaomu-external-note.is-empty { display: none; }
+.qiaomu-external-topics { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 10px; }
+.qiaomu-external-topic { display: inline-flex; align-items: center; gap: 2px; height: 26px; padding: 0 4px 0 10px; border: 1px solid var(--background-modifier-border); border-radius: 13px; font-size: var(--font-ui-small); }
+button.qiaomu-external-topic-remove:not(.clickable-icon) { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: transparent; box-shadow: none; color: var(--text-muted); cursor: pointer; }
+button.qiaomu-external-topic-remove:not(.clickable-icon):hover { background: color-mix(in srgb, var(--text-normal) 10%, transparent); color: var(--text-normal); }
+button.qiaomu-external-topic-remove svg { width: 13px; height: 13px; }
+.qiaomu-external-topic-input { width: 150px; height: 26px; padding: 0 10px; border: 1px dashed var(--background-modifier-border-hover); border-radius: 13px; background: transparent; box-shadow: none; font-size: var(--font-ui-small); }
+.qiaomu-external-cards-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 0 2px; color: var(--text-muted); font-size: var(--font-ui-smaller); }
+button.qiaomu-external-link:not(.clickable-icon) { height: auto; padding: 0; border: 0; background: transparent; box-shadow: none; color: var(--text-normal); font-size: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.qiaomu-external-cards-row { display: flex; gap: 8px; overflow-x: auto; padding: 6px 2px 12px; }
+button.qiaomu-external-card-remove:not(.clickable-icon) { position: absolute; top: 5px; right: 5px; display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: var(--text-normal); box-shadow: 0 1px 4px rgba(0, 0, 0, .3); color: var(--background-primary); cursor: pointer; opacity: 0; transition: opacity .12s ease; }
+button.qiaomu-external-card-remove svg { width: 13px; height: 13px; }
+.qiaomu-external-card:hover button.qiaomu-external-card-remove, .qiaomu-external-card:focus-within button.qiaomu-external-card-remove { opacity: 1; }
+@media (hover: none) { button.qiaomu-external-card-remove:not(.clickable-icon) { opacity: 1; } }
+.qiaomu-external-card-inner { position: absolute; left: 0; top: 0; width: 1080px; height: 1440px; transform: scale(var(--qp-scale, .09)); transform-origin: 0 0; pointer-events: none; }
+.qiaomu-external-paper { width: 100%; }
+/* Xiaohongshu note page in the phone */
+.qiaomu-ext-xhs { background: #fff; color: #222; font: 14px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+.qiaomu-ext-xhs-top { display: flex; align-items: center; gap: 8px; padding: 4px 12px 8px; }
+.qiaomu-ext-xhs-back svg { width: 20px; height: 20px; }
+.qiaomu-ext-xhs-avatar { width: 28px; height: 28px; border-radius: 50%; background: #e6e6e6; flex: none; }
+.qiaomu-ext-xhs-author { flex: 1; font-size: 13px; font-weight: 600; }
+.qiaomu-ext-xhs-follow { padding: 2px 12px; border: 1px solid #ff2e4d; border-radius: 14px; color: #ff2e4d; font-size: 12px; }
+.qiaomu-ext-xhs-stage { position: relative; width: 100%; aspect-ratio: 3 / 4; overflow: hidden; background: #f3f3f3; }
+.qiaomu-ext-xhs-card { position: absolute; left: 0; top: 0; width: 1080px; height: 1440px; transform: scale(var(--qp-scale, .34)); transform-origin: 0 0; }
+.qiaomu-ext-xhs-none { display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 13px; }
+button.qiaomu-ext-xhs-nav:not(.clickable-icon) { position: absolute; top: 50%; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin-top: -14px; padding: 0; border: 0; border-radius: 50%; background: rgba(0, 0, 0, .35); box-shadow: none; color: #fff; cursor: pointer; }
+button.qiaomu-ext-xhs-nav.is-prev { left: 8px; }
+button.qiaomu-ext-xhs-nav.is-next { right: 8px; }
+button.qiaomu-ext-xhs-nav svg { width: 16px; height: 16px; }
+.qiaomu-ext-xhs-count { position: absolute; top: 10px; right: 10px; padding: 1px 9px; border-radius: 10px; background: rgba(0, 0, 0, .45); color: #fff; font-size: 12px; }
+.qiaomu-ext-xhs-dots { display: flex; justify-content: center; gap: 5px; padding: 8px 0 2px; }
+.qiaomu-ext-xhs-dots span { width: 5px; height: 5px; border-radius: 50%; background: #d6d6d6; }
+.qiaomu-ext-xhs-dots span.is-on { background: #ff2e4d; }
+.qiaomu-ext-xhs-note { padding: 8px 14px 28px; }
+.qiaomu-ext-xhs-title { margin-bottom: 8px; font-size: 16px; font-weight: 700; line-height: 1.45; }
+.qiaomu-ext-xhs-text { white-space: pre-wrap; overflow-wrap: anywhere; color: #333; font-size: 14px; line-height: 1.7; }
+.qiaomu-ext-xhs-topics { display: flex; flex-wrap: wrap; gap: 4px 8px; margin-top: 8px; color: #13386c; font-size: 14px; }
+
+/* Publish window for X / Zhihu / Xiaohongshu: left column with form, phone from the top of the right column */
+.qiaomu-external-left { min-width: 0; }
+.qiaomu-external-modal .qiaomu-wechat-columns { align-items: start; }
+.qiaomu-external-modal .qiaomu-wechat-phone { top: 0; height: min(760px, calc(min(88vh, 860px) - 140px)); }
+.qiaomu-external-modal .qiaomu-wechat-form .setting-item { align-items: center; gap: 12px; padding: 8px 0; border-top: 0; }
+.qiaomu-external-modal .setting-item-info { flex: 0 0 auto; min-width: 56px; max-width: 40%; }
+.qiaomu-external-modal .setting-item-control { flex: 1 1 auto; min-width: 0; justify-content: flex-end; }
+.qiaomu-external-modal .qiaomu-wechat-wide { width: 100%; }
+.qiaomu-external-tip { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 8px; padding: 6px 8px 6px 12px; border: 1px solid var(--background-modifier-border); border-radius: 8px; background: var(--background-secondary); color: var(--text-muted); font-size: var(--font-ui-smaller); line-height: 1.5; }
+.qiaomu-external-tip-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 16px; height: calc(var(--font-ui-smaller) * 1.5); }
+.qiaomu-external-tip-icon svg { width: 14px; height: 14px; }
+.qiaomu-external-tip-text { flex: 1; }
+button.qiaomu-external-tip-close:not(.clickable-icon) { display: inline-flex; align-items: center; justify-content: center; align-self: flex-start; flex: none; width: 22px; height: 22px; margin: calc((var(--font-ui-smaller) * 1.5 - 22px) / 2) 0; padding: 0; border: 0; border-radius: 50%; background: transparent; box-shadow: none; color: var(--text-muted); cursor: pointer; }
+button.qiaomu-external-tip-close:not(.clickable-icon):hover { background: color-mix(in srgb, var(--text-normal) 10%, transparent); color: var(--text-normal); }
+button.qiaomu-external-tip-close svg { width: 13px; height: 13px; }
+.qiaomu-external-md-head { display: flex; align-items: center; justify-content: space-between; margin: 10px 0 4px; font-size: var(--font-ui-small); }
+.qiaomu-external-md-name { font-weight: 600; }
+button.qiaomu-external-link.is-empty { display: none; }
+.qiaomu-external-text.is-code { min-height: 260px; font-family: var(--font-monospace); font-size: 12.5px; line-height: 1.6; }
+
+/* Cover row and crop window */
+.qiaomu-cover-section { margin: 4px 0 8px; border-top: 1px solid var(--background-modifier-border); }
+.qiaomu-cover { display: flex; align-items: flex-start; gap: 16px; padding: 12px 0 8px; }
+.qiaomu-cover-thumb { position: relative; flex: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 200px; aspect-ratio: var(--qiaomu-cover-ratio, 2.35); overflow: hidden; border: 1px solid var(--background-modifier-border); border-radius: 8px; background: var(--background-secondary); cursor: pointer; }
+.qiaomu-cover-thumb.is-blank { border-style: dashed; border-color: var(--background-modifier-border-hover); }
+.qiaomu-cover-thumb:focus-visible { outline: 2px solid var(--text-normal); outline-offset: 2px; }
+.qiaomu-cover-thumb-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, .46); color: #fff; font-size: var(--font-ui-small); opacity: 0; transition: opacity .12s ease; }
+.qiaomu-cover-thumb:hover .qiaomu-cover-thumb-hint, .qiaomu-cover-thumb:focus-visible .qiaomu-cover-thumb-hint { opacity: 1; }
+.qiaomu-cover-thumb.is-blank .qiaomu-cover-thumb-hint { background: transparent; color: var(--text-muted); opacity: 1; }
+.qiaomu-cover-thumb.is-blank:hover .qiaomu-cover-thumb-hint { color: var(--text-normal); }
+.qiaomu-cover-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.qiaomu-cover-empty { color: var(--text-muted); font-size: var(--font-ui-smaller); }
+.qiaomu-cover-side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.qiaomu-cover-name { font-size: var(--font-ui-small); font-weight: 600; }
+.qiaomu-cover-line, .qiaomu-cover-note { color: var(--text-muted); font-size: var(--font-ui-smaller); line-height: 1.5; overflow-wrap: anywhere; }
+.qiaomu-cover-warning { color: var(--text-warning); font-size: var(--font-ui-smaller); }
+.qiaomu-cover-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+button.qiaomu-cover-button:not(.clickable-icon) { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border: 1px solid var(--background-modifier-border); border-radius: 8px; background: transparent; box-shadow: none; color: var(--text-normal); font-size: var(--font-ui-small); cursor: pointer; }
+button.qiaomu-cover-button:not(.clickable-icon):hover { background: color-mix(in srgb, var(--text-normal) 6%, transparent); }
+button.qiaomu-cover-button svg { width: 14px; height: 14px; }
+.qiaomu-cover-design.is-empty { display: none; }
+.qiaomu-crop-modal { width: min(680px, 94vw); }
+.qiaomu-crop-hint { margin: 0 0 10px; color: var(--text-muted); font-size: var(--font-ui-small); }
+.qiaomu-crop-frame { position: relative; width: min(100%, 620px); margin: 0 auto; aspect-ratio: var(--qiaomu-crop-ratio, 2.35); overflow: hidden; border-radius: 6px; background: #111; cursor: grab; touch-action: none; user-select: none; }
+.qiaomu-crop-frame.is-dragging { cursor: grabbing; }
+.qiaomu-crop-frame:focus-visible { outline: 2px solid var(--text-normal); outline-offset: 2px; }
+.qiaomu-crop-image { position: absolute; left: 0; top: 0; width: var(--qiaomu-img-w); height: var(--qiaomu-img-h); max-width: none; transform: translate(var(--qiaomu-x, 0px), var(--qiaomu-y, 0px)) scale(var(--qiaomu-s, 1)); transform-origin: 0 0; pointer-events: none; }
+.qiaomu-crop-safe { position: absolute; left: 50%; top: 50%; width: var(--qiaomu-safe-w); height: var(--qiaomu-safe-h); transform: translate(-50%, -50%); border: 1.5px dashed rgba(255, 255, 255, .92); box-shadow: 0 0 0 9999px rgba(0, 0, 0, .3); pointer-events: none; }
+.qiaomu-crop-legend { margin: 6px auto 0; width: min(100%, 620px); color: var(--text-muted); font-size: var(--font-ui-smaller); }
+.qiaomu-crop-controls { display: flex; align-items: center; gap: 12px; width: min(100%, 620px); margin: 12px auto 0; }
+.qiaomu-crop-label { color: var(--text-muted); font-size: var(--font-ui-small); }
+.qiaomu-crop-zoom { flex: 1; accent-color: var(--text-normal); }
+.qiaomu-crop-info { width: min(100%, 620px); margin: 8px auto 0; color: var(--text-muted); font-size: var(--font-ui-smaller); line-height: 1.5; }
+.qiaomu-crop-info.is-warning { color: var(--text-warning); }
+.qiaomu-crop-actions { justify-content: flex-end; margin-top: 16px; }
+.qiaomu-design-modal.qiaomu-wechat-modal { width: min(560px, 94vw); height: auto; max-height: 90vh; overflow: auto; }
+.qiaomu-design-actions { justify-content: flex-end; margin-top: 12px; }

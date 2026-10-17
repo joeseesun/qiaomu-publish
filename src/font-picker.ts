@@ -1,4 +1,5 @@
 import { setIcon } from "obsidian";
+import { ensureBundledFont } from "./external/bundled-font";
 import { setName } from "./accessible-name";
 import { type PickerItem, SearchPicker } from "./search-picker";
 import { listSystemFonts } from "./system-fonts";
@@ -15,7 +16,7 @@ export class FontPicker extends SearchPicker<FontItem> {
   private loaded = false;
   private complete = true;
 
-  constructor(parent: HTMLElement, private readonly onPick: (font: string) => void) {
+  constructor(parent: HTMLElement, private readonly onPick: (font: string) => void, private readonly label = "封面字体") {
     super(parent, { variant: "field", placeholder: "搜索或输入字体名", listName: "字体", width: 300 });
   }
 
@@ -32,7 +33,7 @@ export class FontPicker extends SearchPicker<FontItem> {
     const item = this.fonts.find((entry) => entry.id === this.value) ?? { id: this.value, label: this.value, css: cssFor(this.value) };
     button.createSpan({ cls: "qiaomu-wechat-picker-name", text: item.label }).setCssProps({ "--qiaomu-picker-font": item.css });
     setIcon(button.createSpan({ cls: "qiaomu-wechat-picker-chevron" }), "chevron-down");
-    setName(button, `封面字体，当前 ${item.label}`);
+    setName(button, `${this.label}，当前 ${item.label}`);
   }
   protected renderItem(row: HTMLElement, item: FontItem): void {
     row.createSpan({ cls: "qiaomu-wechat-picker-name", text: item.label }).setCssProps({ "--qiaomu-picker-font": item.css });
@@ -40,6 +41,7 @@ export class FontPicker extends SearchPicker<FontItem> {
   protected choose(id: string): void { this.setValue(id); this.onPick(id); }
 
   protected override async onOpen(): Promise<void> {
+    void ensureBundledFont();
     if (this.loaded) return;
     const { fonts, complete } = await listSystemFonts();
     const known = new Set(PRESETS.map((item) => item.id));

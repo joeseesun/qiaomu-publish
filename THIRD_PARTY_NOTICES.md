@@ -6,6 +6,10 @@
 
 Studied for design only, no code copied: note-to-mp (MIT) for the Obsidian-to-WeChat workflow.
 
+## Zhuque Fangsong (bundled font subset)
+
+`fonts/QiaomuReadingFangsong.woff2` is a reading subset of Zhuque Fangsong v0.212 (technical preview) by Zhejiang JadeFoci Technology Co. LTD (upstream: https://github.com/TrionesType/zhuque), 7,554 codepoints (GB2312 plus Latin, punctuation and full-width characters), glyph outlines and layout features retained. It is embedded in `main.js` and used only as the CSS family `QP Zhuque Fangsong` for card and cover text; characters outside the subset fall back to an installed Zhuque Fangsong or the system 仿宋. Licensed under the SIL Open Font License 1.1 (`fonts/OFL.txt`, also in the `main.js` banner). The subset was produced by `scripts/build-reading-font.py` from the upstream `ZhuqueFangsong-Regular.ttf` (SHA-256 `558c62730844fe54ba220146ed62f859d4e2880188d92d985f8921c6e3743bc4`) and is not an upstream release; it is shared with the author's Qiaomu Reader plugin.
+
 ## Mermaid
 
 Not bundled. Diagrams are rendered with the Mermaid copy that Obsidian ships (`loadMermaid()`), themed per diagram with an init directive so Obsidian's global configuration is not changed. Output is rasterized to PNG for WeChat export.

@@ -5,7 +5,8 @@ import { readFileSync } from "node:fs";
 const production = process.argv[2] === "production";
 
 const context = await esbuild.context({
-  banner: { js: `/*! highlight.js\n${readFileSync(new URL("./node_modules/highlight.js/LICENSE", import.meta.url), "utf8")}*/` },
+  banner: { js: `/*! highlight.js\n${readFileSync(new URL("./node_modules/highlight.js/LICENSE", import.meta.url), "utf8")}*/\n/*! Bundled font subset (Zhuque Fangsong), SIL Open Font License 1.1\n${readFileSync(new URL("./fonts/OFL.txt", import.meta.url), "utf8").replaceAll("*/", "* /")}*/` },
+  loader: { ".woff2": "base64" },
   entryPoints: ["src/main.ts"],
   bundle: true,
   external: ["obsidian", "electron", "@codemirror/state", "@codemirror/view"],

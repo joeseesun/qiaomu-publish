@@ -34,8 +34,9 @@ function pathWithoutQuery(src: string): string {
   return src.replace(/[?#].*$/, "");
 }
 
-export async function renderNoteForWechat(app: App, file: TFile, component: Component): Promise<RenderedNote> {
-  const raw = await app.vault.cachedRead(file);
+/** `rawOverride` renders that text instead of the file's (a publish window where the person edited the Markdown); frontmatter still comes from the file. */
+export async function renderNoteForWechat(app: App, file: TFile, component: Component, rawOverride?: string): Promise<RenderedNote> {
+  const raw = rawOverride ?? await app.vault.cachedRead(file);
   const cache = app.metadataCache.getFileCache(file);
   const frontmatter: Record<string, unknown> = { ...(cache?.frontmatter ?? {}) };
   const fmTitle = [frontmatter.title, frontmatter["标题"]].find((value) => typeof value === "string" && value.trim());

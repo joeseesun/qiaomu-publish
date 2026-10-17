@@ -24,6 +24,8 @@ export const COVER_FONTS: Record<string, { name: string; stack: string; weight: 
   sans: { name: "黑体", stack: '-apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif', weight: 700 },
   serif: { name: "宋体", stack: '"Songti SC", STSong, "Noto Serif CJK SC", "Source Han Serif SC", serif', weight: 700 },
   kai: { name: "楷体", stack: '"Kaiti SC", STKaiti, KaiTi, "Noto Serif CJK SC", serif', weight: 400 },
+  // Zhuque Fangsong (SIL OFL): a GB2312 subset is bundled as "QP Zhuque Fangsong"; the full font or the system 仿宋 covers the rest.
+  zhuque: { name: "朱雀仿宋", stack: '"QP Zhuque Fangsong", "Zhuque Fangsong (technical preview)", "Zhuque Fangsong", "朱雀仿宋", STFangsong, FangSong, "Songti SC", "Noto Serif CJK SC", serif', weight: 400 },
 };
 
 export const COVER_SIZE = { min: 28, max: 80, step: 1 } as const;
@@ -91,49 +93,55 @@ export function wrapTitle(title: string, measure: (text: string) => number, maxW
 const SIZES = [58, 52, 46, 40, 36];
 const MAX_TEXT_WIDTH = 640;
 
-export function drawTitleCover(context: CanvasRenderingContext2D, title: string, style: WechatCoverStyle): void {
+export interface CoverSize { width: number; height: number }
+export const WECHAT_COVER_SIZE: CoverSize = { width: COVER_WIDTH, height: COVER_HEIGHT };
+
+/** Draws the title cover at any platform size. Type sizes and margins are designed at 900 px wide and scale with the width. */
+export function drawTitleCover(context: CanvasRenderingContext2D, title: string, style: WechatCoverStyle, size: CoverSize = WECHAT_COVER_SIZE): void {
+  const k = size.width / COVER_WIDTH;
   const background = coverBackground(style.background);
   const font = coverFont(style.font);
   const ink = style.color ?? coverInk(background.colors);
   if (background.colors.length === 1) context.fillStyle = background.colors[0]!;
   else {
-    const gradient = context.createLinearGradient(0, 0, COVER_WIDTH, COVER_HEIGHT);
+    const gradient = context.createLinearGradient(0, 0, size.width, size.height);
     background.colors.forEach((color, index) => gradient.addColorStop(index / (background.colors.length - 1), color));
     context.fillStyle = gradient;
   }
-  context.fillRect(0, 0, COVER_WIDTH, COVER_HEIGHT);
+  context.fillRect(0, 0, size.width, size.height);
 
   // A chosen size is respected (up to four lines); automatic size shrinks until three lines fit.
-  const candidates = style.size ? [style.size] : SIZES;
-  const maxLines = style.size ? Math.min(4, Math.max(1, Math.floor((COVER_HEIGHT - 48) / Math.round(style.size * 1.38)))) : 3;
+  const candidates = (style.size ? [style.size] : SIZES).map((value) => value * k);
+  const maxLines = style.size ? Math.min(4, Math.max(1, Math.floor((size.height - 48 * k) / Math.round(style.size * k * 1.38)))) : 3;
   let lines: string[] = [];
-  let size = candidates[candidates.length - 1]!;
+  let fontSize = candidates[candidates.length - 1]!;
   for (const candidate of candidates) {
     context.font = `${font.weight} ${candidate}px ${font.stack}`;
-    lines = wrapTitle(title, (text) => context.measureText(text).width, MAX_TEXT_WIDTH);
-    size = candidate;
+    lines = wrapTitle(title, (text) => context.measureText(text).width, MAX_TEXT_WIDTH * k);
+    fontSize = candidate;
     if (lines.length <= maxLines) break;
   }
   if (lines.length > maxLines) {
     lines = lines.slice(0, maxLines);
     lines[maxLines - 1] = `${lines[maxLines - 1]!.slice(0, -1)}…`;
   }
-  const lineHeight = Math.round(size * 1.38);
-  const top = (COVER_HEIGHT - lines.length * lineHeight) / 2;
+  const lineHeight = Math.round(fontSize * 1.38);
+  const top = (size.height - lines.length * lineHeight) / 2;
   context.fillStyle = ink;
   context.textAlign = "center";
   context.textBaseline = "middle";
-  context.font = `${font.weight} ${size}px ${font.stack}`;
-  lines.forEach((text, index) => context.fillText(text, COVER_WIDTH / 2, top + index * lineHeight + lineHeight / 2));
+  context.font = `${font.weight} ${fontSize}px ${font.stack}`;
+  lines.forEach((text, index) => context.fillText(text, size.width / 2, top + index * lineHeight + lineHeight / 2));
 }
 
-export async function renderTitleCover(title: string, style: WechatCoverStyle): Promise<ArrayBuffer> {
+export async function renderTitleCover(title: string, style: WechatCoverStyle, beforeDraw?: () => Promise<unknown>, size: CoverSize = WECHAT_COVER_SIZE): Promise<ArrayBuffer> {
+  await beforeDraw?.();
   const canvas = document.createElement("canvas");
-  canvas.width = COVER_WIDTH;
-  canvas.height = COVER_HEIGHT;
+  canvas.width = size.width;
+  canvas.height = size.height;
   const context = canvas.getContext("2d");
   if (!context) throw new Error("当前设备无法生成标题封面，请为笔记指定封面图片");
-  drawTitleCover(context, title, style);
+  drawTitleCover(context, title, style, size);
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
   if (!blob) throw new Error("生成标题封面失败，请为笔记指定封面图片");
   return blob.arrayBuffer();

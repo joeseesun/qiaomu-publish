@@ -5,12 +5,15 @@ import { ConnectionModal } from "./connection-modal";
 import { CoverEditor } from "./cover-editor";
 import { ThemePicker } from "./theme-picker";
 import { resolveWechatTheme } from "./export-html";
+import { bridgeAvailable } from "./bridge/server";
+import { renderCardControls } from "./external-card-controls";
 import type { WechatConnection } from "./types";
 
-type Section = "accounts" | "style" | "about";
+type Section = "accounts" | "browser" | "style" | "about";
 
 const SECTIONS: { id: Section; label: string }[] = [
   { id: "accounts", label: "公众号" },
+  { id: "browser", label: "浏览器平台" },
   { id: "style", label: "排版与封面" },
   { id: "about", label: "关于" },
 ];
@@ -50,6 +53,7 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
 
     const body = containerEl.createDiv({ cls: "qp-body", attr: { role: "tabpanel" } });
     if (this.section === "accounts") this.renderAccounts(body);
+    else if (this.section === "browser") this.renderBrowser(body);
     else if (this.section === "style") this.renderStyle(body);
     else this.renderAbout(body);
   }
@@ -210,6 +214,31 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
       update: (style) => { wechat.cover = style; void this.plugin.saveSettings(); },
     });
     this.cleanups.push(() => editor?.destroy());
+  }
+
+  // ---------- 浏览器平台 ----------
+
+  private renderBrowser(body: HTMLElement): void {
+    const external = this.plugin.settings.external;
+    const section = body.createDiv({ cls: "qp-section" });
+    this.head(section, "X、知乎、小红书", "不用填账号和密码：文章通过乔木 Clipper 浏览器扩展，写进你已经登录的网页，只存为草稿，由你检查后再发布。");
+
+    const requirements = section.createDiv({ cls: "qp-card" });
+    const available = bridgeAvailable();
+    new Setting(requirements).setName("本机交接").setDesc(available ? "可用。发布时 Obsidian 只在本机短暂开一个只给浏览器扩展用的端口，用完立即关闭。" : "不可用：需要桌面版 Obsidian，手机上暂时无法发到这些平台。");
+    new Setting(requirements).setName("乔木 Clipper 扩展").setDesc("在 Chrome、Edge、Brave 等浏览器里安装并启用，并保持 X、知乎、小红书创作平台已登录。")
+      .addButton((button) => button.setButtonText("获取扩展").onClick(() => { window.open("https://github.com/joeseesun/qiaomu-clipper", "_blank", "noopener"); }));
+    new Setting(requirements).setName("使用方法").setDesc("打开笔记，点预览顶部的「发布」，在窗口最上面选平台；也可以用命令面板搜「草稿」，或在文件上点右键。");
+
+    const cards = body.createDiv({ cls: "qp-section" });
+    this.head(cards, "小红书图文卡片", "笔记会排成 3:4 卡片再上传。每次发布时也能在窗口里改。");
+    const list = cards.createDiv({ cls: "qp-list qp-settings" });
+    this.cleanups.push(renderCardControls(list, external, () => void this.plugin.saveSettings()));
+    new Setting(list).setName("分页").setDesc("--- 单独成行时总是另起一张。").addDropdown((dropdown) => {
+      dropdown.addOption("flow", "按内容自动");
+      dropdown.addOption("h2", "每个二级标题一张");
+      dropdown.setValue(external.cardPagination).onChange((value) => { external.cardPagination = value === "h2" ? "h2" : "flow"; void this.plugin.saveSettings(); });
+    });
   }
 
   // ---------- 关于 ----------
