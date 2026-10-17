@@ -25,7 +25,7 @@ const INTRO: Record<PublishTargetId, string> = {
 const RECORD_KEYS: Record<PublishTargetId, { url: string; at: string }> = {
   x: { url: "x_draft_url", at: "x_draft_at" },
   zhihu: { url: "zhihu_draft_url", at: "zhihu_draft_at" },
-  xhs: { url: "xhs_draft_url", at: "xhs_draft_at" },
+  xhs: { url: "xhs_editor_url", at: "xhs_prefilled_at" },
 };
 
 const THUMB_WIDTH = 96;
@@ -54,6 +54,7 @@ export class ExternalPublishModal extends Modal {
   private preparing = false;
   private entries: CardEntry[] = [];
   private checks: ExternalCheck[] = [];
+  private preparationError: ExternalCheck | null = null;
   /** Xiaohongshu copy the person can edit; untouched until they edit, so a re-layout keeps their words. */
   private xhsText = "";
   private xhsTopics: string[] = [];
@@ -129,7 +130,7 @@ export class ExternalPublishModal extends Modal {
     this.actionsEl = footer.createDiv({ cls: "qiaomu-wechat-actions" });
     this.stopButton = this.actionsEl.createEl("button", { text: "取消" });
     this.stopButton.addEventListener("click", () => this.onStop());
-    this.publishButton = this.actionsEl.createEl("button", { text: "发到草稿", cls: "mod-cta" });
+    this.publishButton = this.actionsEl.createEl("button", { text: this.target === "xhs" ? "填入编辑器" : "发到草稿", cls: "mod-cta" });
     this.publishButton.addEventListener("click", () => void this.publish());
     this.publishButton.disabled = true;
 
@@ -347,6 +348,7 @@ export class ExternalPublishModal extends Modal {
     if (this.busy) return;
     const generation = ++this.generation;
     this.preparing = true;
+    this.preparationError = null;
     try {
       if (!this.base) {
         this.statusEl.setText("正在准备…");
@@ -382,7 +384,8 @@ export class ExternalPublishModal extends Modal {
       this.preparing = false;
       this.prepared = null;
       this.xhs = null;
-      this.checks = [{ level: "error", message: `准备失败：${error instanceof Error ? error.message : String(error)}`, fix: "" }];
+      this.preparationError = { level: "error", message: `准备失败：${error instanceof Error ? error.message : String(error)}`, fix: "" };
+      this.checks = [this.preparationError];
       this.renderChecks();
       this.preview.showMessage("没能排版这篇笔记");
       this.statusEl.setText("");
@@ -456,7 +459,7 @@ export class ExternalPublishModal extends Modal {
   }
 
   private refreshChecks(): void {
-    this.checks = this.computeChecks();
+    this.checks = this.preparationError ? [this.preparationError] : this.computeChecks();
     this.renderChecks();
     this.refreshButtons();
   }
@@ -477,7 +480,7 @@ export class ExternalPublishModal extends Modal {
     const ready = this.target === "xhs" ? !!this.xhs : !!this.prepared;
     const blocked = !this.base || !ready || this.preparing || this.markdownTimer !== null || this.prepareTimer !== null || this.checks.some((check) => check.level === "error");
     this.publishButton.disabled = blocked || this.busy || !bridgeAvailable();
-    this.publishButton.setText("发到草稿");
+    this.publishButton.setText(this.target === "xhs" ? "填入编辑器" : "发到草稿");
     this.stopButton.setText(this.busy ? "停止" : "取消");
     this.titleInput.toggleAttribute("disabled", this.busy);
     this.formEl.inert = this.busy;

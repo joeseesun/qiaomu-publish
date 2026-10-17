@@ -5,7 +5,7 @@ vi.mock("obsidian", () => ({ requestUrl: vi.fn(), TFile: class {}, getLinkpath: 
 vi.mock("../src/render-note", () => ({ renderNoteForWechat: vi.fn(async () => rendered.note) }));
 vi.mock("../src/external/xhs-cards", () => ({ layoutXhsCards: vi.fn(), renderCardBlobs: vi.fn() }));
 vi.mock("../src/rasterize", () => ({ svgToPng: vi.fn(async () => ({ blob: new Blob([new Uint8Array([137, 80, 78, 71])], { type: "image/png" }) })) }));
-import { prepareBase } from "../src/external/prepare";
+import { prepareBase, buildJob } from "../src/external/prepare";
 import { loadArticleImage, normalizeImage } from "../src/external/assets";
 
 beforeEach(() => {
@@ -35,6 +35,10 @@ describe("complete images across browser platforms", () => {
     expect(base.assets.size).toBe(1);
     expect(readBinary).toHaveBeenCalledOnce();
     expect(base.previewHtml.match(/qp-asset:\/\/one/g)).toHaveLength(2);
+    if (target === "x") {
+      base.note.html = '<img src="app://same" data-qm-image="one">'.repeat(26);
+      expect(buildJob(base, "Title").checks.some(check => check.level === "error")).toBe(true);
+    }
     base.dispose();
   });
 

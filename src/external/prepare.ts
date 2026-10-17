@@ -203,7 +203,8 @@ export function buildJob(base: PreparedBase, title: string): PreparedPublish {
     job.content.cover = base.coverId ?? undefined;
     job.content.markdown = `${frontMatterBlock(title, base.coverId ? `${X_IMAGE_HOST}${base.coverId}` : "")}\n${base.xBody}\n`;
     const tables = (note.html.match(/<table[\s>]/gi) ?? []).length;
-    checks.push(...checkX({ title, media: base.assets.size + tables }));
+    const pictures = (note.html.match(/<img[\s>]/gi) ?? []).length;
+    checks.push(...checkX({ title, media: pictures + tables + (base.coverId ? 1 : 0) }));
   } else if (target === "zhihu") {
     job.content.html = base.previewHtml.replaceAll(PREVIEW_IMAGE_SCHEME, ZHIHU_IMAGE_SCHEME);
     job.content.summary = frontmatterString(note.frontmatter, "digest", "摘要", "description", "summary") || undefined;
