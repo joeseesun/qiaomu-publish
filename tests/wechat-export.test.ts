@@ -131,7 +131,7 @@ describe("publishing metadata", () => {
     const meta = metaFromFrontmatter({ 作者: "乔木", 摘要: "一句话", 封面: "![[cover.png]]" }, "标题", { accountId: "main", author: "默认", openComment: true });
     expect(meta).toMatchObject({ accountId: "main", author: "乔木", digest: "一句话", cover: "cover.png", title: "标题" });
     expect(imageMime("a.JPG")).toBe("image/jpeg");
-    expect(imageMime("a.svg")).toBeNull();
+    expect(imageMime("a.svg")).toBe("image/svg+xml");
   });
 
   it("keeps the cover text separate from the title", () => {

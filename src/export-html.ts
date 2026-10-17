@@ -50,12 +50,14 @@ export function buildWechatHtml(articleHtml: string, theme: WechatExportTheme, b
   return normalizeInlinedWechatHtml(root.outerHTML);
 }
 
-/** Replaces image sources by marker id and strips the markers. Unmapped images keep their src. */
+/** Replaces every local marker; an unresolved image must never reach a draft. */
 export function finalizeWechatImages(html: string, sources: ReadonlyMap<string, string>): string {
   const doc = new DOMParser().parseFromString(html, "text/html");
-  for (const image of Array.from(doc.querySelectorAll("img[data-qm-image]"))) {
+  for (const image of Array.from(doc.querySelectorAll("img"))) {
     const next = sources.get(image.getAttribute("data-qm-image") ?? "");
     if (next) image.setAttribute("src", next);
+    if (!/^https?:\/\//i.test(image.getAttribute("src") ?? "")) throw new Error(`图片「${image.getAttribute("alt") || "未命名"}」尚未完成上传，请重试。`);
+    image.removeAttribute("srcset");
     image.removeAttribute("data-qm-image");
   }
   return doc.body.innerHTML;

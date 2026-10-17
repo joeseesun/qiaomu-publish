@@ -1,5 +1,5 @@
 import { requestUrl, type App } from "obsidian";
-import { imageMime } from "./publisher";
+import { assertImageSources, imageKey, readArticleImage } from "./image-assets";
 import type { ArticleImage } from "./render-note";
 
 function blobToDataUrl(blob: Blob): Promise<string> {
@@ -12,7 +12,8 @@ function blobToDataUrl(blob: Blob): Promise<string> {
 }
 
 /** The exact article HTML used by preview and draft, with local images embedded as data URLs. */
-export async function embedWechatImages(app: App, html: string, images: ArticleImage[], includeRemote = false): Promise<string> {
+export async function embedWechatImages(app: App, html: string, images: ArticleImage[], includeRemote = false, imageErrors: string[] = []): Promise<string> {
+  assertImageSources(html, images, imageErrors);
   const doc = new DOMParser().parseFromString(html, "text/html");
   const remote = new Map<string, string>();
   if (includeRemote) {
@@ -28,18 +29,26 @@ export async function embedWechatImages(app: App, html: string, images: ArticleI
       image.setAttribute("src", remote.get(src)!);
     }
   }
+  const embedded = new Map<string | Blob, string>();
   for (const image of Array.from(doc.querySelectorAll("img[data-qm-image]"))) {
     const source = images.find((item) => item.id === image.getAttribute("data-qm-image"));
-    if (source?.kind === "generated") image.setAttribute("src", await blobToDataUrl(source.blob));
-    if (source?.kind === "vault") image.setAttribute("src", await blobToDataUrl(new Blob([await app.vault.readBinary(source.file)], { type: imageMime(source.file.name) ?? "image/png" })));
+    if (source && source.kind !== "remote") {
+      const key = imageKey(source);
+      if (!embedded.has(key)) {
+        const bytes = await readArticleImage(app, source);
+        embedded.set(key, await blobToDataUrl(new Blob([bytes.data], { type: bytes.type })));
+      }
+      image.setAttribute("src", embedded.get(key)!);
+    }
     image.removeAttribute("data-qm-image");
   }
+  for (const image of Array.from(doc.querySelectorAll("img"))) image.removeAttribute("srcset");
   return doc.body.innerHTML;
 }
 
 /** Copy the exact article HTML used by both preview and draft, with local images embedded. */
-export async function copyWechatHtml(app: App, html: string, images: ArticleImage[]): Promise<void> {
-  const embedded = await embedWechatImages(app, html, images);
+export async function copyWechatHtml(app: App, html: string, images: ArticleImage[], imageErrors: string[] = []): Promise<void> {
+  const embedded = await embedWechatImages(app, html, images, false, imageErrors);
   await navigator.clipboard.write([new ClipboardItem({
     "text/html": new Blob([embedded], { type: "text/html" }),
     "text/plain": new Blob([new DOMParser().parseFromString(embedded, "text/html").body.textContent ?? ""], { type: "text/plain" }),

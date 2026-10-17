@@ -259,7 +259,7 @@ export class WechatPublishModal extends Modal {
       return;
     }
     const hasCover = true; // A text-only note receives a generated title cover.
-    const checks = preflight(this.meta, this.wechatHtml, hasCover, this.note.warnings);
+    const checks = preflight(this.meta, this.wechatHtml, hasCover, this.note.warnings, this.note.imageErrors);
     if (this.meta.cover && !resolveCover(this.app, this.file.path, this.meta, this.note.images)) {
       checks.unshift({ level: "error", message: `找不到指定封面：${this.meta.cover}`, fix: "请修正 cover 属性，或删除它以生成标题封面。" });
     }
@@ -389,8 +389,8 @@ export class WechatPublishModal extends Modal {
     if (!this.note || !this.wechatHtml) return;
     this.setBusy(true, "正在准备复制…");
     try {
-      await copyWechatHtml(this.app, this.wechatHtml, this.note.images);
-      this.setBusy(false, "已复制，可粘贴到公众号编辑器。");
+      await copyWechatHtml(this.app, this.wechatHtml, this.note.images, this.note.imageErrors);
+      this.setBusy(false, this.note.images.some(image => image.kind !== "remote") ? "已复制排版；发送到草稿箱可自动上传图片。" : "已复制，可粘贴到公众号编辑器。");
     } catch (error) {
       this.setBusy(false, `复制失败：${error instanceof Error ? error.message : String(error)}`);
     }

@@ -14,6 +14,8 @@ export interface RenderedNote {
   html: string;
   images: ArticleImage[];
   warnings: string[];
+  /** Unresolved images remain visible in the preview but block copy/export/publish. */
+  imageErrors?: string[];
   frontmatter: Record<string, unknown>;
   dispose(): void;
 }
@@ -31,7 +33,8 @@ async function waitForEmbeds(root: HTMLElement, timeoutMs: number): Promise<void
 }
 
 function pathWithoutQuery(src: string): string {
-  return src.replace(/[?#].*$/, "");
+  try { const url = new URL(src); url.search = ""; url.hash = ""; return url.href; }
+  catch { return src.replace(/[?#].*$/, ""); }
 }
 
 export async function renderNoteForWechat(app: App, file: TFile, component: Component): Promise<RenderedNote> {
@@ -44,6 +47,7 @@ export async function renderNoteForWechat(app: App, file: TFile, component: Comp
   const prepared = prepareMarkdown(raw, title);
 
   const warnings: string[] = [];
+  const imageErrors: string[] = [];
   const images: ArticleImage[] = [];
   const objectUrls: string[] = [];
   const container = document.body.createDiv({ cls: "markdown-rendered qiaomu-wechat-render" });
@@ -59,6 +63,16 @@ export async function renderNoteForWechat(app: App, file: TFile, component: Comp
       const target = app.metadataCache.getFirstLinkpathDest(getLinkpath(embed.link), file.path);
       if (target) byResource.set(pathWithoutQuery(app.vault.getResourcePath(target)), target);
     }
+    let resourceIndexReady = false;
+    const resolveResource = (src: string): TFile | null => {
+      const key = pathWithoutQuery(src);
+      if (!byResource.has(key) && !resourceIndexReady) {
+        // Host-generated URLs work on both desktop and mobile. Never read arbitrary OS paths.
+        for (const target of app.vault.getFiles()) byResource.set(pathWithoutQuery(app.vault.getResourcePath(target)), target);
+        resourceIndexReady = true;
+      }
+      return byResource.get(key) ?? null;
+    };
 
     let counter = 0;
     const nextId = () => `img${counter++}`;
@@ -66,19 +80,27 @@ export async function renderNoteForWechat(app: App, file: TFile, component: Comp
       const embed = image.closest(".internal-embed");
       const src = image.getAttribute("src") ?? "";
       let target: TFile | null = null;
-      if (embed) target = app.metadataCache.getFirstLinkpathDest(getLinkpath(embed.getAttribute("src") ?? ""), file.path);
-      if (!target && src) target = byResource.get(pathWithoutQuery(src)) ?? null;
+      if (embed) {
+        const candidate = app.metadataCache.getFirstLinkpathDest(getLinkpath(embed.getAttribute("src") ?? ""), file.path);
+        // A nested note can have a same-name attachment next to the outer note.
+        if (candidate && src && pathWithoutQuery(app.vault.getResourcePath(candidate)) === pathWithoutQuery(src)) target = candidate;
+      }
+      if (!target && src && !/^(https?:|data:|blob:)/i.test(src)) target = resolveResource(src);
       const id = nextId();
       if (target instanceof TFile) {
         images.push({ id, kind: "vault", name: target.name, file: target });
       } else if (/^https?:\/\//i.test(src)) {
         images.push({ id, kind: "remote", name: src.split("/").pop() || "image", url: src });
       } else {
-        warnings.push(`图片「${image.getAttribute("alt") || src || "未命名"}」找不到对应文件，已跳过。`);
-        (embed ?? image).remove();
+        imageErrors.push(`图片「${image.getAttribute("alt") || embed?.getAttribute("src") || "未命名"}」找不到库内文件，请修正引用或将图片保存到附件后重试。`);
         continue;
       }
       image.setAttribute("data-qm-image", id);
+      image.removeAttribute("srcset");
+    }
+    for (const embed of Array.from(container.querySelectorAll(".internal-embed"))) {
+      const source = embed.getAttribute("src") ?? "";
+      if (!embed.querySelector("img") && /\.(png|jpe?g|gif|webp|avif|bmp|svg)(?:[#|?]|$)/i.test(source)) imageErrors.push(`图片「${source}」未能加载，请检查附件是否存在。`);
     }
 
     const addGenerated = (raster: RasterImage, name: string, alt: string, inline: boolean) => {
@@ -134,6 +156,7 @@ export async function renderNoteForWechat(app: App, file: TFile, component: Comp
       html: container.innerHTML,
       images,
       warnings: Array.from(new Set(warnings)),
+      imageErrors: Array.from(new Set(imageErrors)),
       frontmatter,
       dispose: () => { for (const url of objectUrls.splice(0)) URL.revokeObjectURL(url); },
     };

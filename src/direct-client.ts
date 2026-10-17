@@ -129,7 +129,8 @@ export class WechatDirectClient implements WechatTransport {
     const doc = new DOMParser().parseFromString(body.content_html, "text/html");
     for (const image of Array.from(doc.querySelectorAll("img[src]"))) {
       const src = image.getAttribute("src")!;
-      if (/^https:\/\/mmbiz\.qpic\.cn\//i.test(src)) continue;
+      // WeChat uploadimg can return an HTTP URL for an image already hosted by WeChat.
+      if (/^https?:\/\/mmbiz\.qpic\.cn\//i.test(src)) continue;
       if (!src.startsWith("https://")) throw new Error("正文图片必须使用公网 HTTPS 地址，或先保存为本地附件再发布");
       const uploaded = await this.uploadRemote(src, "content");
       image.setAttribute("src", uploaded.url!);

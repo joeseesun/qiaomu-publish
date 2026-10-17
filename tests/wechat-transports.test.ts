@@ -9,6 +9,21 @@ import type { WechatPublishSettings } from "../src/types";
 afterEach(() => setRequestUrlHandler(async () => { throw new Error("unexpected request"); }));
 
 describe("WeChat direct transport", () => {
+  it.each(["create", "update"])("accepts already-uploaded HTTP WeChat images for %s", async (action) => {
+    const calls: string[] = [];
+    setRequestUrlHandler(async (options) => {
+      const url = String(options.url); calls.push(url);
+      if (url.endsWith("/stable_token")) return { status: 200, json: { access_token: "token", expires_in: 7200 } };
+      if (url.includes("/draft/")) return { status: 200, json: { media_id: "draft-qa", errcode: 0 } };
+      throw new Error("unexpected reupload");
+    });
+    const client = new WechatDirectClient({ id: "direct:1", name: "QA" }, "wx-test", "secret");
+    const body = { account_id: "direct:1", title: "test", content_html: '<img src="http://mmbiz.qpic.cn/a/0">', thumb_media_id: "cover", publish_now: false as const };
+    const result = action === "create" ? await client.createDraft(body) : await client.updateDraft("draft-qa", body);
+    expect(result.media_id).toBe("draft-qa");
+    expect(calls).toHaveLength(2);
+  });
+
   it("refreshes an expired token once and retries the same read-only request", async () => {
     const urls: string[] = [];
     setRequestUrlHandler(async (options) => {
@@ -34,7 +49,7 @@ describe("WeChat direct transport", () => {
 
   it("rejects body images that cannot be uploaded through the direct transport", async () => {
     const client = new WechatDirectClient({ id: "direct:1", name: "测试号" }, "wx-test", "secret");
-    for (const src of ["http://example.com/pic.jpg", "data:image/png;base64,AAAA"]) {
+    for (const src of ["http://example.com/pic.jpg", "http://mmbiz.qpic.cn.evil.test/a", "http://mmbiz.qpic.cn@evil.test/a", "data:image/png;base64,AAAA", "app://local/image.png"]) {
       await expect(client.createDraft({ account_id: "direct:1", title: "测试", content_html: `<img src="${src}">`, thumb_media_id: "cover", publish_now: false }))
         .rejects.toThrow("正文图片必须使用公网 HTTPS");
     }
