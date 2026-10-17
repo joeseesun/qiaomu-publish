@@ -1,5 +1,5 @@
 import { requestUrl, type App } from "obsidian";
-import { imageMime } from "../publisher";
+import { prepareLocalSvg, readArticleImage as readLocalImage } from "../image-assets";
 import type { ArticleImage } from "../render-note";
 import type { BridgeAsset } from "../bridge/protocol";
 
@@ -41,8 +41,11 @@ async function redraw(data: ArrayBuffer, mime: string, type: "image/png" | "imag
 
 /** Formats a platform cannot take (SVG, BMP, AVIF) are redrawn as PNG; oversized pictures become smaller JPEGs. Animated GIFs pass untouched. */
 export async function normalizeImage(data: ArrayBuffer, name: string, mime: string, limits: ImageLimits): Promise<{ data: ArrayBuffer; mime: string; name: string }> {
+  if (!data.byteLength) throw new Error(`图片为空：${name}`);
   let out = data;
   let type = mime.toLowerCase();
+  if (type === "image/gif" && out.byteLength > limits.maxBytes) throw new Error(`动图「${name}」超过 ${Math.round(limits.maxBytes / 1048576)}MB，请先压缩 GIF 后重试；为保留动画，不会自动转成静态图。`);
+  if (type === "image/svg+xml") out = new TextEncoder().encode(prepareLocalSvg(new TextDecoder().decode(out)).svg).buffer;
   if (!KEEP.has(type)) { out = await redraw(out, type, "image/png", limits.maxEdge); type = "image/png"; }
   if (out.byteLength > limits.maxBytes) { out = await redraw(out, type, "image/jpeg", Math.min(limits.maxEdge, 2800)); type = "image/jpeg"; }
   if (out.byteLength > limits.maxBytes) throw new Error(`图片「${name}」超过 ${Math.round(limits.maxBytes / 1048576)}MB，压缩后仍然太大`);
@@ -70,11 +73,9 @@ export async function loadArticleImage(app: App, image: ArticleImage, cache?: Im
 }
 
 async function readArticleImage(app: App, image: ArticleImage): Promise<{ data: ArrayBuffer; mime: string; name: string }> {
-  if (image.kind === "generated") return { data: await image.blob.arrayBuffer(), mime: image.blob.type || "image/png", name: image.name };
-  if (image.kind === "vault") {
-    const mime = imageMime(image.file.name);
-    if (!mime) throw new Error(`不支持的图片格式：${image.file.name}`);
-    return { data: await app.vault.readBinary(image.file), mime, name: image.file.name };
+  if (image.kind !== "remote") {
+    const loaded = await readLocalImage(app, image);
+    return { data: loaded.data, mime: loaded.type, name: loaded.name };
   }
   const response = await requestUrl({ url: image.url, throw: false });
   const type = Object.entries(response.headers).find(([key]) => key.toLowerCase() === "content-type")?.[1]?.split(";")[0]?.trim().toLowerCase() ?? "";

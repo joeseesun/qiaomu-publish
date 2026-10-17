@@ -19,8 +19,8 @@ function download(blob: Blob, name: string): void {
 const safeName = (title: string) => title.replace(/[\\/:*?"<>|]+/g, " ").trim() || "公众号文章";
 
 /** A standalone page that keeps the inlined WeChat styles, so it opens the same anywhere. */
-export async function exportHtmlFile(app: App, title: string, html: string, images: ArticleImage[]): Promise<string> {
-  const body = await embedWechatImages(app, html, images, true);
+export async function exportHtmlFile(app: App, title: string, html: string, images: ArticleImage[], imageErrors: string[] = []): Promise<string> {
+  const body = await embedWechatImages(app, html, images, true, imageErrors);
   const escaped = title.replace(/[&<>"]/g, (char) => `&#${char.charCodeAt(0)};`);
   const page = `<!doctype html>\n<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escaped}</title></head><body style="margin:0">\n${body}\n</body></html>\n`;
   const name = `${safeName(title)}.html`;
@@ -29,8 +29,8 @@ export async function exportHtmlFile(app: App, title: string, html: string, imag
 }
 
 /** Lays the article out offscreen at WeChat width, then rasterizes it through an SVG foreignObject. */
-export async function exportLongImage(app: App, title: string, html: string, images: ArticleImage[]): Promise<{ name: string; reduced: boolean }> {
-  const embedded = await embedWechatImages(app, html, images, true);
+export async function exportLongImage(app: App, title: string, html: string, images: ArticleImage[], imageErrors: string[] = []): Promise<{ name: string; reduced: boolean }> {
+  const embedded = await embedWechatImages(app, html, images, true, imageErrors);
   const host = activeDocument.body.createDiv({ cls: "qiaomu-wechat-export-stage" });
   host.setCssProps({ "--qiaomu-export-width": `${LONG_IMAGE_WIDTH}px` });
   const stage = host.createDiv();

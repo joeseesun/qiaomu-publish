@@ -1,0 +1,507 @@
+{
+  "environment": "Obsidian 1.14.4 isolated macOS vault",
+  "clipperCommit": "2cabb0184276b8fdb288b38f93f0d239e8ecaf40",
+  "matrix": [
+    {
+      "target": "x",
+      "name": "wikilink",
+      "ok": true,
+      "images": [
+        "文章/附件/中文 配图.png"
+      ],
+      "assets": [
+        {
+          "id": "img0",
+          "name": "中文 配图.png",
+          "mime": "image/png",
+          "bytes": 13179
+        }
+      ],
+      "checks": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "x",
+      "name": "markdown-reference",
+      "ok": true,
+      "images": [
+        "文章/附件/中文 配图.png"
+      ],
+      "assets": [
+        {
+          "id": "img0",
+          "name": "中文 配图.png",
+          "mime": "image/png",
+          "bytes": 13179
+        }
+      ],
+      "checks": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "x",
+      "name": "raw-html",
+      "ok": true,
+      "images": [
+        "文章/附件/中文 配图.png"
+      ],
+      "assets": [
+        {
+          "id": "img0",
+          "name": "中文 配图.png",
+          "mime": "image/png",
+          "bytes": 13179
+        }
+      ],
+      "checks": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "x",
+      "name": "file-url",
+      "ok": true,
+      "images": [
+        "文章/附件/photo.jpg"
+      ],
+      "assets": [
+        {
+          "id": "img0",
+          "name": "photo.jpg",
+          "mime": "image/jpeg",
+          "bytes": 8428
+        }
+      ],
+      "checks": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "x",
+      "name": "nested-note",
+      "ok": true,
+      "images": [
+        "子笔记/附件/同名.png",
+        "子笔记/附件/同名.png"
+      ],
+      "assets": [
+        {
+          "id": "img0",
+          "name": "同名.png",
+          "mime": "image/png",
+          "bytes": 6015
+        },
+        {
+          "id": "img1",
+          "name": "同名.png",
+          "mime": "image/png",
+          "bytes": 6015
+        }
+      ],
+      "checks": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "x",
+      "name": "svg",
+      "ok": true,
+      "images": [
+        "文章/附件/vector.svg"
+      ],
+      "assets": [
+        {
+          "id": "img0",
+          "name": "vector.png",
+          "mime": "image/png",
+          "bytes": 1636
+        }
+      ],
+      "checks": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "x",
+      "name": "duplicate",
+      "ok": true,
+      "images": [
+        "文章/附件/photo.jpg",
+        "文章/附件/photo.jpg"
+      ],
+      "assets": [
+        {
+          "id": "img0",
+          "name": "photo.jpg",
+          "mime": "image/jpeg",
+          "bytes": 8428
+        },
+        {
+          "id": "img1",
+          "name": "photo.jpg",
+          "mime": "image/jpeg",
+          "bytes": 8428
+        }
+      ],
+      "checks": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "x",
+      "name": "missing",
+      "ok": false,
+      "error": "图片「附件/不存在.png」未能加载，请检查附件是否存在。"
+    },
+    {
+      "target": "zhihu",
+      "name": "wikilink",
+      "ok": true,
+      "images": [
+        "文章/附件/中文 配图.png"
+      ],
+      "assets": [
+        {
+          "id": "img0",
+          "name": "中文 配图.png",
+          "mime": "image/png",
+          "bytes": 13179
+        }
+      ],
+      "checks": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "zhihu",
+      "name": "markdown-reference",
+      "ok": true,
+      "images": [
+        "文章/附件/中文 配图.png"
+      ],
+      "assets": [
+        {
+          "id": "img0",
+          "name": "中文 配图.png",
+          "mime": "image/png",
+          "bytes": 13179
+        }
+      ],
+      "checks": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "zhihu",
+      "name": "raw-html",
+      "ok": true,
+      "images": [
+        "文章/附件/中文 配图.png"
+      ],
+      "assets": [
+        {
+          "id": "img0",
+          "name": "中文 配图.png",
+          "mime": "image/png",
+          "bytes": 13179
+        }
+      ],
+      "checks": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "zhihu",
+      "name": "file-url",
+      "ok": true,
+      "images": [
+        "文章/附件/photo.jpg"
+      ],
+      "assets": [
+        {
+          "id": "img0",
+          "name": "photo.jpg",
+          "mime": "image/jpeg",
+          "bytes": 8428
+        }
+      ],
+      "checks": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "zhihu",
+      "name": "nested-note",
+      "ok": true,
+      "images": [
+        "子笔记/附件/同名.png",
+        "子笔记/附件/同名.png"
+      ],
+      "assets": [
+        {
+          "id": "img0",
+          "name": "同名.png",
+          "mime": "image/png",
+          "bytes": 6015
+        },
+        {
+          "id": "img1",
+          "name": "同名.png",
+          "mime": "image/png",
+          "bytes": 6015
+        }
+      ],
+      "checks": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "zhihu",
+      "name": "svg",
+      "ok": true,
+      "images": [
+        "文章/附件/vector.svg"
+      ],
+      "assets": [
+        {
+          "id": "img0",
+          "name": "vector.png",
+          "mime": "image/png",
+          "bytes": 1636
+        }
+      ],
+      "checks": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "zhihu",
+      "name": "duplicate",
+      "ok": true,
+      "images": [
+        "文章/附件/photo.jpg",
+        "文章/附件/photo.jpg"
+      ],
+      "assets": [
+        {
+          "id": "img0",
+          "name": "photo.jpg",
+          "mime": "image/jpeg",
+          "bytes": 8428
+        },
+        {
+          "id": "img1",
+          "name": "photo.jpg",
+          "mime": "image/jpeg",
+          "bytes": 8428
+        }
+      ],
+      "checks": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "zhihu",
+      "name": "missing",
+      "ok": false,
+      "error": "图片「附件/不存在.png」未能加载，请检查附件是否存在。"
+    },
+    {
+      "target": "xhs",
+      "name": "wikilink",
+      "ok": true,
+      "images": [
+        "文章/附件/中文 配图.png"
+      ],
+      "assets": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "xhs",
+      "name": "markdown-reference",
+      "ok": true,
+      "images": [
+        "文章/附件/中文 配图.png"
+      ],
+      "assets": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "xhs",
+      "name": "raw-html",
+      "ok": true,
+      "images": [
+        "文章/附件/中文 配图.png"
+      ],
+      "assets": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "xhs",
+      "name": "file-url",
+      "ok": true,
+      "images": [
+        "文章/附件/photo.jpg"
+      ],
+      "assets": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "xhs",
+      "name": "nested-note",
+      "ok": true,
+      "images": [
+        "子笔记/附件/同名.png",
+        "子笔记/附件/同名.png"
+      ],
+      "assets": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "xhs",
+      "name": "svg",
+      "ok": true,
+      "images": [
+        "文章/附件/vector.svg"
+      ],
+      "assets": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "xhs",
+      "name": "duplicate",
+      "ok": true,
+      "images": [
+        "文章/附件/photo.jpg",
+        "文章/附件/photo.jpg"
+      ],
+      "assets": [],
+      "hasLocalUrl": false
+    },
+    {
+      "target": "xhs",
+      "name": "missing",
+      "ok": false,
+      "error": "图片「附件/不存在.png」未能加载，请检查附件是否存在。"
+    },
+    {
+      "target": "x",
+      "kind": "installed-modal",
+      "ready": true,
+      "disabled": false,
+      "status": "",
+      "checks": [],
+      "bodyOverflow": false
+    },
+    {
+      "target": "zhihu",
+      "kind": "installed-modal",
+      "ready": true,
+      "disabled": false,
+      "status": "",
+      "checks": [],
+      "bodyOverflow": false
+    },
+    {
+      "target": "xhs",
+      "kind": "installed-modal",
+      "ready": true,
+      "disabled": false,
+      "status": "",
+      "checks": [
+        {
+          "level": "warning",
+          "message": "正文是空的，只会发布图片",
+          "fix": "在上面的正文框里写几句"
+        }
+      ],
+      "bodyOverflow": false,
+      "cards": [
+        {
+          "id": "card1",
+          "mime": "image/png",
+          "bytes": 49440
+        },
+        {
+          "id": "card2",
+          "mime": "image/png",
+          "bytes": 47890
+        }
+      ]
+    }
+  ],
+  "edgeCases": [
+    {
+      "target": "x",
+      "case": "missing",
+      "disabled": true,
+      "checks": [
+        {
+          "level": "error",
+          "message": "准备失败：图片「附件/不存在.png」未能加载，请检查附件是否存在。",
+          "fix": ""
+        }
+      ]
+    },
+    {
+      "target": "zhihu",
+      "case": "missing",
+      "disabled": true,
+      "checks": [
+        {
+          "level": "error",
+          "message": "准备失败：图片「附件/不存在.png」未能加载，请检查附件是否存在。",
+          "fix": ""
+        }
+      ]
+    },
+    {
+      "target": "xhs",
+      "case": "missing",
+      "disabled": true,
+      "checks": [
+        {
+          "level": "error",
+          "message": "准备失败：图片「附件/不存在.png」未能加载，请检查附件是否存在。",
+          "fix": ""
+        }
+      ]
+    },
+    {
+      "case": "pending-edit",
+      "disabled": true
+    },
+    {
+      "case": "invalid-edit",
+      "disabled": true,
+      "hasBase": false,
+      "hasPrepared": false
+    },
+    {
+      "case": "repaired-edit",
+      "disabled": false,
+      "content": "---\ntitle: \"wikilink\"\ncover: \"https://qm-image.local/cover\"\n---\n\n修复后的正文\n\n![附件/中文 配图.png](https://qm-image.local/img0)\n"
+    }
+  ],
+  "wire": {
+    "clipperCommit": "2cabb0184276b8fdb288b38f93f0d239e8ecaf40",
+    "job": {
+      "v": 1,
+      "id": "219856b9-6865-4e4d-a64c-e6afe60a5253",
+      "target": "zhihu",
+      "title": "联调测试：重复图片",
+      "noteName": "duplicate",
+      "content": {
+        "html": "<p><img alt=\"附件/photo.jpg\" src=\"qp-asset://img0\"></p>\n<p><img alt=\"附件/photo.jpg\" src=\"qp-asset://img0\"></p>"
+      },
+      "assets": [
+        {
+          "id": "img0",
+          "name": "photo.jpg",
+          "mime": "image/jpeg",
+          "bytes": 8428
+        }
+      ]
+    },
+    "assets": [
+      {
+        "id": "img0",
+        "name": "photo.jpg",
+        "mime": "image/jpeg",
+        "bytes": 8428,
+        "actualBytes": 8428,
+        "sha256": "23cc881906bd29ee8c4ce3b8b73637faf6ca72db34bb99dcead613822043e6e3"
+      }
+    ],
+    "livePlatform": false
+  },
+  "livePlatformDrafts": "Pending login in the dedicated Chrome test profile; no public post performed"
+}

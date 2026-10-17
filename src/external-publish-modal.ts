@@ -74,6 +74,7 @@ export class ExternalPublishModal extends Modal {
   private coverResult: CoverResult | null = null;
   private coverUrl = "";
   private titleInput!: HTMLElement;
+  private formEl!: HTMLElement;
   private textArea!: HTMLTextAreaElement;
   private counterEl!: HTMLElement;
   private copyNote!: HTMLElement;
@@ -108,6 +109,7 @@ export class ExternalPublishModal extends Modal {
     renderPlatformSwitch(left, this.target, (choice) => { this.close(); this.plugin.openPublish(this.file, choice); });
     this.renderTip(left);
     const form = left.createDiv({ cls: "qiaomu-wechat-form" });
+    this.formEl = form;
 
     new Setting(form).setName("标题").addText((text) => {
       this.titleInput = text.inputEl;
@@ -230,8 +232,11 @@ export class ExternalPublishModal extends Modal {
 
   /** The text changed, so the rendered note and its pictures are rebuilt; pictures already read come from the cache. */
   private discardBase(): void {
+    this.generation++;
     this.base?.dispose();
     this.base = null;
+    this.prepared = null;
+    this.xhs = null;
     for (const [id, url] of this.assetUrls) if (id !== "cover") { URL.revokeObjectURL(url); this.assetUrls.delete(id); }
   }
 
@@ -375,6 +380,8 @@ export class ExternalPublishModal extends Modal {
     } catch (error) {
       if (generation !== this.generation) return;
       this.preparing = false;
+      this.prepared = null;
+      this.xhs = null;
       this.checks = [{ level: "error", message: `准备失败：${error instanceof Error ? error.message : String(error)}`, fix: "" }];
       this.renderChecks();
       this.preview.showMessage("没能排版这篇笔记");
@@ -468,11 +475,12 @@ export class ExternalPublishModal extends Modal {
 
   private refreshButtons(): void {
     const ready = this.target === "xhs" ? !!this.xhs : !!this.prepared;
-    const blocked = !ready || this.preparing || this.checks.some((check) => check.level === "error");
+    const blocked = !this.base || !ready || this.preparing || this.markdownTimer !== null || this.prepareTimer !== null || this.checks.some((check) => check.level === "error");
     this.publishButton.disabled = blocked || this.busy || !bridgeAvailable();
     this.publishButton.setText("发到草稿");
     this.stopButton.setText(this.busy ? "停止" : "取消");
     this.titleInput.toggleAttribute("disabled", this.busy);
+    this.formEl.inert = this.busy;
   }
 
   private onStop(): void {
@@ -502,7 +510,10 @@ export class ExternalPublishModal extends Modal {
     const base = this.base!;
     if (this.target !== "xhs") {
       if (this.cover) { this.coverResult = await this.cover.result(); applyCover(base, this.coverResult); }
-      return { job: buildJob(base, this.articleTitle).job, assets: base.assets };
+      const prepared = buildJob(base, this.articleTitle);
+      const errors = prepared.checks.filter(check => check.level === "error");
+      if (errors.length) throw new Error(errors.map(check => check.message).join("\n"));
+      return { job: prepared.job, assets: base.assets };
     }
     return buildXhsJob(base, this.includedCards().map((entry) => entry.card), {
       title: this.articleTitle, text: this.xhsText, topics: this.xhsTopics, card: this.card,
@@ -543,7 +554,7 @@ export class ExternalPublishModal extends Modal {
     if (status.state === "done") {
       this.statusEl.setText(status.text ?? "草稿已写入，请在浏览器里检查后再发布。");
       await this.record(status);
-      new Notice(`已写入${TARGET_LABEL[this.target]}草稿`);
+      new Notice(this.target === "xhs" ? "已填入小红书编辑器，请检查后暂存或发布" : `已写入${TARGET_LABEL[this.target]}草稿`);
       if (status.url) {
         const open = this.actionsEl.createEl("button", { text: "打开草稿" });
         open.addEventListener("click", () => { window.open(status.url!, "_blank"); });

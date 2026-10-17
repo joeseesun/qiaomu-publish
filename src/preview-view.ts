@@ -181,6 +181,7 @@ export class WechatPreviewView extends ItemView {
   }
 
   private updateStatus(): void {
+    if (this.note?.imageErrors?.length) { this.status.setText(this.note.imageErrors.join("\n")); return; }
     const warnings = this.note?.warnings.length ?? 0;
     const stats = this.note ? articleStats(this.note.html) : null;
     this.status.setText([
@@ -193,9 +194,9 @@ export class WechatPreviewView extends ItemView {
     if (!this.ready || !this.note || !this.wechatHtml) return;
     this.status.setText("正在导出…");
     try {
-      if (kind === "html") new Notice(`已导出 ${await exportHtmlFile(this.app, this.note.title, this.wechatHtml, this.note.images)}`);
+      if (kind === "html") new Notice(`已导出 ${await exportHtmlFile(this.app, this.note.title, this.wechatHtml, this.note.images, this.note.imageErrors)}`);
       else {
-        const result = await exportLongImage(this.app, this.note.title, this.wechatHtml, this.note.images);
+        const result = await exportLongImage(this.app, this.note.title, this.wechatHtml, this.note.images, this.note.imageErrors);
         new Notice(result.reduced ? `已导出 ${result.name}（文章较长，清晰度已降低）` : `已导出 ${result.name}`);
       }
       this.updateStatus();
@@ -278,8 +279,8 @@ export class WechatPreviewView extends ItemView {
     if (!this.note || !this.wechatHtml) return;
     this.status.setText("正在准备复制…");
     try {
-      await copyWechatHtml(this.app, this.wechatHtml, this.note.images);
-      this.status.setText("已复制，可粘贴到公众号编辑器。");
+      await copyWechatHtml(this.app, this.wechatHtml, this.note.images, this.note.imageErrors);
+      this.status.setText(this.note.images.some(image => image.kind !== "remote") ? "已复制排版；发送到草稿箱可自动上传图片。" : "已复制，可粘贴到公众号编辑器。");
     } catch (error) {
       this.status.setText(`复制失败：${error instanceof Error ? error.message : String(error)}`);
     }

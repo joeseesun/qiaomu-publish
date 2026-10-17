@@ -3,6 +3,8 @@ import { ensureBundledFont, usesBundledFont } from "./external/bundled-font";
 import type { WechatCoverStyle } from "./types";
 import { type App, getLinkpath, TFile } from "obsidian";
 import type { ArticleImage, RenderedNote } from "./render-note";
+import { assertImageSources, imageKey, readArticleImage } from "./image-assets";
+export { imageMime } from "./image-assets";
 import { finalizeWechatImages } from "./export-html";
 import type { WechatTransport } from "./transport";
 import { inspectWechatPublishInput } from "./publish-inspect";
@@ -19,15 +21,6 @@ export interface DraftMeta {
   /** Big text on the generated cover. Empty follows the title; the two are independent once set. */
   coverText: string;
   openComment: boolean;
-}
-
-const MIME: Record<string, string> = {
-  png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif",
-  webp: "image/webp", avif: "image/avif", bmp: "image/bmp",
-};
-
-export function imageMime(name: string): string | null {
-  return MIME[name.split(".").pop()?.toLowerCase() ?? ""] ?? null;
 }
 
 function stringField(frontmatter: Record<string, unknown>, ...keys: string[]): string {
@@ -68,7 +61,7 @@ export function resolveCover(app: App, sourcePath: string, meta: DraftMeta, imag
 
 export interface PublishCheck { level: "error" | "warning" | "info"; message: string; fix: string; }
 
-export function preflight(meta: DraftMeta, html: string, hasCover: boolean, warnings: string[]): PublishCheck[] {
+export function preflight(meta: DraftMeta, html: string, hasCover: boolean, warnings: string[], imageErrors: string[] = []): PublishCheck[] {
   const result = inspectWechatPublishInput({
     accountId: meta.accountId,
     title: meta.title,
@@ -85,17 +78,8 @@ export function preflight(meta: DraftMeta, html: string, hasCover: boolean, warn
     .filter((check) => check.code !== "DATA_URL_IMAGE")
     .map((check) => ({ level: check.level, message: check.message, fix: check.suggested_fix ?? "" }));
   for (const message of warnings) checks.push({ level: "warning", message, fix: "" });
+  for (const message of imageErrors) checks.push({ level: "error", message, fix: "" });
   return checks;
-}
-
-async function imageBytes(app: App, image: ArticleImage): Promise<{ data: ArrayBuffer; type: string; name: string }> {
-  if (image.kind === "generated") return { data: await image.blob.arrayBuffer(), type: image.blob.type || "image/png", name: image.name };
-  if (image.kind === "vault") {
-    const type = imageMime(image.file.name);
-    if (!type) throw new Error(`公众号不支持的图片格式：${image.file.name}`);
-    return { data: await app.vault.readBinary(image.file), type, name: image.file.name };
-  }
-  throw new Error("远程图片由 Bridge 直接抓取");
 }
 
 export interface PublishProgress { (message: string): void; }
@@ -116,6 +100,7 @@ export async function publishDraft(options: {
   onProgress?: PublishProgress;
 }): Promise<{ mediaId: string; accountName: string }> {
   const { app, client, note, onProgress } = options;
+  assertImageSources(options.wechatHtml, note.images, note.imageErrors);
   const meta = { ...options.meta };
   const coverStyle = { ...(options.cover ?? DEFAULT_COVER_STYLE) };
   const cover = options.coverImage ? null : resolveCover(app, options.file.path, meta, note.images);
@@ -123,14 +108,20 @@ export async function publishDraft(options: {
   if (options.signal?.aborted) throw new Error("已取消");
   const uploadable = note.images.filter((image) => image.kind !== "remote");
   const sources = new Map<string, string>();
+  const uploaded = new Map<string | Blob, string>();
   for (const [index, image] of uploadable.entries()) {
     if (options.signal?.aborted) throw new Error("已取消");
+    const key = imageKey(image);
+    const previous = uploaded.get(key);
+    if (previous) { sources.set(image.id, previous); continue; }
     onProgress?.(`上传图片 ${index + 1}/${uploadable.length}：${image.name}`);
-    const bytes = await imageBytes(app, image);
+    const bytes = await readArticleImage(app, image);
     const result = await client.uploadImage(meta.accountId, "content", bytes.name, bytes.type, bytes.data);
     if (!result.url) throw new Error(`图片上传没有返回地址：${image.name}`);
     sources.set(image.id, result.url);
+    uploaded.set(key, result.url);
   }
+  const contentHtml = finalizeWechatImages(options.wechatHtml, sources);
 
   let thumbMediaId = "";
   let coverUrl = "";
@@ -151,7 +142,7 @@ export async function publishDraft(options: {
   } else {
     if (options.signal?.aborted) throw new Error("已取消");
     onProgress?.("上传封面");
-    const bytes = await imageBytes(app, cover.image);
+    const bytes = await readArticleImage(app, cover.image);
     const result = await client.uploadImage(meta.accountId, "cover", bytes.name, bytes.type, bytes.data);
     if (!result.media_id) throw new Error("封面上传没有返回 media_id");
     thumbMediaId = result.media_id;
@@ -162,7 +153,7 @@ export async function publishDraft(options: {
   const body = {
     account_id: meta.accountId,
     title: meta.title,
-    content_html: finalizeWechatImages(options.wechatHtml, sources),
+    content_html: contentHtml,
     author: meta.author || undefined,
     digest: meta.digest || undefined,
     content_source_url: meta.sourceUrl || undefined,

@@ -1,7 +1,7 @@
 {
   "name": "qiaomu-publish",
-  "version": "0.2.0",
-  "description": "Preview and publish Obsidian notes as WeChat Official Account drafts.",
+  "version": "0.3.0",
+  "description": "Format notes for WeChat drafts, X Articles, Zhihu and Xiaohongshu with Qiaomu Clipper.",
   "type": "module",
   "main": "main.js",
   "scripts": {

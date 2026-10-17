@@ -1,0 +1,1141 @@
+{
+  "render-fixed": [
+    {
+      "name": "wikilink",
+      "dom": [
+        {
+          "src": "app://034d6f6f9a1b76a1c5638b9caf3c4ff60fe7/tmp/qm-local-image-check/vault/%E6%96%87%E7%AB%A0/%E9%99%84%E4%BB%B6/%E4%B8%AD%E6%96%87%20%E9%85%8D%E5%9B%BE.png?1792231143370",
+          "embed": "附件/中文 配图.png",
+          "classes": "internal-embed media-embed image-embed is-loaded"
+        }
+      ],
+      "images": [
+        {
+          "kind": "vault",
+          "path": "文章/附件/中文 配图.png",
+          "name": "中文 配图.png"
+        }
+      ],
+      "warnings": [],
+      "imageErrors": [],
+      "htmlImageCount": 1,
+      "cache": [
+        "附件/中文 配图.png"
+      ]
+    },
+    {
+      "name": "wiki-size",
+      "dom": [
+        {
+          "src": "app://034d6f6f9a1b76a1c5638b9caf3c4ff60fe7/tmp/qm-local-image-check/vault/%E6%96%87%E7%AB%A0/%E9%99%84%E4%BB%B6/%E4%B8%AD%E6%96%87%20%E9%85%8D%E5%9B%BE.png?1792231143370",
+          "embed": "附件/中文 配图.png",
+          "classes": "internal-embed media-embed image-embed is-loaded"
+        }
+      ],
+      "images": [
+        {
+          "kind": "vault",
+          "path": "文章/附件/中文 配图.png",
+          "name": "中文 配图.png"
+        }
+      ],
+      "warnings": [],
+      "imageErrors": [],
+      "htmlImageCount": 1,
+      "cache": [
+        "附件/中文 配图.png"
+      ]
+    },
+    {
+      "name": "markdown-relative",
+      "dom": [
+        {
+          "src": "app://034d6f6f9a1b76a1c5638b9caf3c4ff60fe7/tmp/qm-local-image-check/vault/%E6%96%87%E7%AB%A0/%E9%99%84%E4%BB%B6/%E4%B8%AD%E6%96%87%20%E9%85%8D%E5%9B%BE.png?1792231143370",
+          "embed": "附件/中文 配图.png",
+          "classes": "internal-embed media-embed image-embed is-loaded"
+        }
+      ],
+      "images": [
+        {
+          "kind": "vault",
+          "path": "文章/附件/中文 配图.png",
+          "name": "中文 配图.png"
+        }
+      ],
+      "warnings": [],
+      "imageErrors": [],
+      "htmlImageCount": 1,
+      "cache": [
+        "附件/中文 配图.png"
+      ]
+    },
+    {
+      "name": "markdown-angle",
+      "dom": [
+        {
+          "src": "app://034d6f6f9a1b76a1c5638b9caf3c4ff60fe7/tmp/qm-local-image-check/vault/%E6%96%87%E7%AB%A0/%E9%99%84%E4%BB%B6/%E4%B8%AD%E6%96%87%20%E9%85%8D%E5%9B%BE.png?1792231143370",
+          "embed": "附件/中文 配图.png",
+          "classes": "internal-embed media-embed image-embed is-loaded"
+        }
+      ],
+      "images": [
+        {
+          "kind": "vault",
+          "path": "文章/附件/中文 配图.png",
+          "name": "中文 配图.png"
+        }
+      ],
+      "warnings": [],
+      "imageErrors": [],
+      "htmlImageCount": 1,
+      "cache": [
+        "附件/中文 配图.png"
+      ]
+    },
+    {
+      "name": "markdown-dot",
+      "dom": [
+        {
+          "src": "app://034d6f6f9a1b76a1c5638b9caf3c4ff60fe7/tmp/qm-local-image-check/vault/%E6%96%87%E7%AB%A0/%E9%99%84%E4%BB%B6/%E4%B8%AD%E6%96%87%20%E9%85%8D%E5%9B%BE.png?1792231143370",
+          "embed": "./附件/中文 配图.png",
+          "classes": "internal-embed media-embed image-embed is-loaded"
+        }
+      ],
+      "images": [
+        {
+          "kind": "vault",
+          "path": "文章/附件/中文 配图.png",
+          "name": "中文 配图.png"
+        }
+      ],
+      "warnings": [],
+      "imageErrors": [],
+      "htmlImageCount": 1,
+      "cache": [
+        "./附件/中文 配图.png"
+      ]
+    },
+    {
+      "name": "vault-root",
+      "dom": [
+        {
+          "src": "app://034d6f6f9a1b76a1c5638b9caf3c4ff60fe7/tmp/qm-local-image-check/vault/%E6%96%87%E7%AB%A0/%E9%99%84%E4%BB%B6/%E4%B8%AD%E6%96%87%20%E9%85%8D%E5%9B%BE.png?1792231143370",
+          "embed": "文章/附件/中文 配图.png",
+          "classes": "internal-embed media-embed image-embed is-loaded"
+        }
+      ],
+      "images": [
+        {
+          "kind": "vault",
+          "path": "文章/附件/中文 配图.png",
+          "name": "中文 配图.png"
+        }
+      ],
+      "warnings": [],
+      "imageErrors": [],
+      "htmlImageCount": 1,
+      "cache": [
+        "文章/附件/中文 配图.png"
+      ]
+    },
+    {
+      "name": "markdown-reference",
+      "dom": [
+        {
+          "src": "app://034d6f6f9a1b76a1c5638b9caf3c4ff60fe7/tmp/qm-local-image-check/vault/%E6%96%87%E7%AB%A0/%E9%99%84%E4%BB%B6/%E4%B8%AD%E6%96%87%20%E9%85%8D%E5%9B%BE.png?1792231143370"
+        }
+      ],
+      "images": [
+        {
+          "kind": "vault",
+          "path": "文章/附件/中文 配图.png",
+          "name": "中文 配图.png"
+        }
+      ],
+      "warnings": [],
+      "imageErrors": [],
+      "htmlImageCount": 1
+    },
+    {
+      "name": "raw-html",
+      "dom": [
+        {
+          "src": "app://034d6f6f9a1b76a1c5638b9caf3c4ff60fe7/tmp/qm-local-image-check/vault/%E6%96%87%E7%AB%A0/%E9%99%84%E4%BB%B6/%E4%B8%AD%E6%96%87%20%E9%85%8D%E5%9B%BE.png?1792231143370"
+        }
+      ],
+      "images": [
+        {
+          "kind": "vault",
+          "path": "文章/附件/中文 配图.png",
+          "name": "中文 配图.png"
+        }
+      ],
+      "warnings": [],
+      "imageErrors": [],
+      "htmlImageCount": 1
+    },
+    {
+      "name": "missing",
+      "dom": [],
+      "images": [],
+      "warnings": [
+        "嵌入内容「附件/不存在.png」无法发布到公众号，已保留为文字。"
+      ],
+      "imageErrors": [
+        "图片「附件/不存在.png」未能加载，请检查附件是否存在。"
+      ],
+      "htmlImageCount": 0,
+      "cache": [
+        "附件/不存在.png"
+      ]
+    },
+    {
+      "name": "svg",
+      "dom": [
+        {
+          "src": "app://034d6f6f9a1b76a1c5638b9caf3c4ff60fe7/tmp/qm-local-image-check/vault/%E6%96%87%E7%AB%A0/%E9%99%84%E4%BB%B6/vector.svg?1792231143388",
+          "embed": "附件/vector.svg",
+          "classes": "internal-embed media-embed image-embed is-loaded"
+        }
+      ],
+      "images": [
+        {
+          "kind": "vault",
+          "path": "文章/附件/vector.svg",
+          "name": "vector.svg"
+        }
+      ],
+      "warnings": [],
+      "imageErrors": [],
+      "htmlImageCount": 1,
+      "cache": [
+        "附件/vector.svg"
+      ]
+    },
+    {
+      "name": "webp",
+      "dom": [
+        {
+          "src": "app://034d6f6f9a1b76a1c5638b9caf3c4ff60fe7/tmp/qm-local-image-check/vault/%E6%96%87%E7%AB%A0/%E9%99%84%E4%BB%B6/photo.webp?1792231143381",
+          "embed": "附件/photo.webp",
+          "classes": "internal-embed media-embed image-embed is-loaded"
+        }
+      ],
+      "images": [
+        {
+          "kind": "vault",
+          "path": "文章/附件/photo.webp",
+          "name": "photo.webp"
+        }
+      ],
+      "warnings": [],
+      "imageErrors": [],
+      "htmlImageCount": 1,
+      "cache": [
+        "附件/photo.webp"
+      ]
+    },
+    {
+      "name": "duplicate",
+      "dom": [
+        {
+          "src": "app://034d6f6f9a1b76a1c5638b9caf3c4ff60fe7/tmp/qm-local-image-check/vault/%E6%96%87%E7%AB%A0/%E9%99%84%E4%BB%B6/photo.jpg?1792231143373",
+          "embed": "附件/photo.jpg",
+          "classes": "internal-embed media-embed image-embed is-loaded"
+        },
+        {
+          "src": "app://034d6f6f9a1b76a1c5638b9caf3c4ff60fe7/tmp/qm-local-image-check/vault/%E6%96%87%E7%AB%A0/%E9%99%84%E4%BB%B6/photo.jpg?1792231143373",
+          "embed": "附件/photo.jpg",
+          "classes": "internal-embed media-embed image-embed is-loaded"
+        }
+      ],
+      "images": [
+        {
+          "kind": "vault",
+          "path": "文章/附件/photo.jpg",
+          "name": "photo.jpg"
+        },
+        {
+          "kind": "vault",
+          "path": "文章/附件/photo.jpg",
+          "name": "photo.jpg"
+        }
+      ],
+      "warnings": [],
+      "imageErrors": [],
+      "htmlImageCount": 2,
+      "cache": [
+        "附件/photo.jpg",
+        "附件/photo.jpg"
+      ]
+    },
+    {
+      "name": "nested-note",
+      "dom": [
+        {
+          "src": "app://034d6f6f9a1b76a1c5638b9caf3c4ff60fe7/tmp/qm-local-image-check/vault/%E5%AD%90%E7%AC%94%E8%AE%B0/%E9%99%84%E4%BB%B6/%E5%90%8C%E5%90%8D.png?1792231143384",
+          "embed": "附件/同名.png",
+          "classes": "internal-embed media-embed image-embed is-loaded"
+        },
+        {
+          "src": "app://034d6f6f9a1b76a1c5638b9caf3c4ff60fe7/tmp/qm-local-image-check/vault/%E5%AD%90%E7%AC%94%E8%AE%B0/%E9%99%84%E4%BB%B6/%E5%90%8C%E5%90%8D.png?1792231143384",
+          "embed": "附件/同名.png",
+          "classes": "internal-embed media-embed image-embed is-loaded"
+        }
+      ],
+      "images": [
+        {
+          "kind": "vault",
+          "path": "子笔记/附件/同名.png",
+          "name": "同名.png"
+        },
+        {
+          "kind": "vault",
+          "path": "子笔记/附件/同名.png",
+          "name": "同名.png"
+        }
+      ],
+      "warnings": [],
+      "imageErrors": [],
+      "htmlImageCount": 2,
+      "cache": [
+        "子笔记/嵌入.md"
+      ]
+    },
+    {
+      "name": "file-url",
+      "dom": [
+        {
+          "src": "app://034d6f6f9a1b76a1c5638b9caf3c4ff60fe7/tmp/qm-local-image-check/vault/%E6%96%87%E7%AB%A0/%E9%99%84%E4%BB%B6/photo.jpg"
+        }
+      ],
+      "images": [
+        {
+          "kind": "vault",
+          "path": "文章/附件/photo.jpg",
+          "name": "photo.jpg"
+        }
+      ],
+      "warnings": [],
+      "imageErrors": [],
+      "htmlImageCount": 1
+    },
+    {
+      "name": "draft-edit",
+      "dom": [
+        {
+          "src": "app://034d6f6f9a1b76a1c5638b9caf3c4ff60fe7/tmp/qm-local-image-check/vault/%E6%96%87%E7%AB%A0/%E9%99%84%E4%BB%B6/%E4%B8%AD%E6%96%87%20%E9%85%8D%E5%9B%BE.png?1792231143370",
+          "embed": "附件/中文 配图.png",
+          "classes": "internal-embed media-embed image-embed is-loaded"
+        }
+      ],
+      "images": [
+        {
+          "kind": "vault",
+          "path": "文章/附件/中文 配图.png",
+          "name": "中文 配图.png"
+        }
+      ],
+      "warnings": [],
+      "imageErrors": [],
+      "htmlImageCount": 1,
+      "cache": [
+        "附件/中文 配图.png"
+      ]
+    }
+  ],
+  "clipboard-fixed": [
+    {
+      "name": "wikilink",
+      "version": "0.2.1",
+      "warnings": [],
+      "imagePaths": [
+        "文章/附件/中文 配图.png"
+      ],
+      "previewImages": 1,
+      "copiedImages": 1,
+      "decoded": [
+        {
+          "srcPrefix": "data:image/png;base64,iVBORw0K",
+          "decoded": true,
+          "width": 640
+        }
+      ],
+      "status": "已复制排版；发送到草稿箱可自动上传图片。"
+    },
+    {
+      "name": "markdown-reference",
+      "version": "0.2.1",
+      "warnings": [],
+      "imagePaths": [
+        "文章/附件/中文 配图.png"
+      ],
+      "previewImages": 1,
+      "copiedImages": 1,
+      "decoded": [
+        {
+          "srcPrefix": "data:image/png;base64,iVBORw0K",
+          "decoded": true,
+          "width": 640
+        }
+      ],
+      "status": "已复制排版；发送到草稿箱可自动上传图片。"
+    },
+    {
+      "name": "raw-html",
+      "version": "0.2.1",
+      "warnings": [],
+      "imagePaths": [
+        "文章/附件/中文 配图.png"
+      ],
+      "previewImages": 1,
+      "copiedImages": 1,
+      "decoded": [
+        {
+          "srcPrefix": "data:image/png;base64,iVBORw0K",
+          "decoded": true,
+          "width": 640
+        }
+      ],
+      "status": "已复制排版；发送到草稿箱可自动上传图片。"
+    },
+    {
+      "name": "file-url",
+      "version": "0.2.1",
+      "warnings": [],
+      "imagePaths": [
+        "文章/附件/photo.jpg"
+      ],
+      "previewImages": 1,
+      "copiedImages": 1,
+      "decoded": [
+        {
+          "srcPrefix": "data:image/jpeg;base64,/9j/4AA",
+          "decoded": true,
+          "width": 640
+        }
+      ],
+      "status": "已复制排版；发送到草稿箱可自动上传图片。"
+    },
+    {
+      "name": "nested-note",
+      "version": "0.2.1",
+      "warnings": [],
+      "imagePaths": [
+        "子笔记/附件/同名.png",
+        "子笔记/附件/同名.png"
+      ],
+      "previewImages": 2,
+      "copiedImages": 2,
+      "decoded": [
+        {
+          "srcPrefix": "data:image/png;base64,iVBORw0K",
+          "decoded": true,
+          "width": 640
+        },
+        {
+          "srcPrefix": "data:image/png;base64,iVBORw0K",
+          "decoded": true,
+          "width": 640
+        }
+      ],
+      "status": "已复制排版；发送到草稿箱可自动上传图片。"
+    },
+    {
+      "name": "svg",
+      "version": "0.2.1",
+      "warnings": [],
+      "imagePaths": [
+        "文章/附件/vector.svg"
+      ],
+      "previewImages": 1,
+      "copiedImages": 1,
+      "decoded": [
+        {
+          "srcPrefix": "data:image/png;base64,iVBORw0K",
+          "decoded": true,
+          "width": 200
+        }
+      ],
+      "status": "已复制排版；发送到草稿箱可自动上传图片。"
+    },
+    {
+      "name": "webp",
+      "version": "0.2.1",
+      "warnings": [],
+      "imagePaths": [
+        "文章/附件/photo.webp"
+      ],
+      "previewImages": 1,
+      "copiedImages": 1,
+      "decoded": [
+        {
+          "srcPrefix": "data:image/webp;base64,UklGRoQ",
+          "decoded": true,
+          "width": 640
+        }
+      ],
+      "status": "已复制排版；发送到草稿箱可自动上传图片。"
+    }
+  ],
+  "transport-fixed": [
+    {
+      "mode": "direct-https-response",
+      "name": "wikilink",
+      "result": {
+        "mediaId": "synthetic-draft",
+        "accountName": "测试号"
+      },
+      "uploads": [
+        {
+          "path": "/cgi-bin/media/uploadimg",
+          "name": "中文 配图.png",
+          "type": "image/png",
+          "size": 13179
+        },
+        {
+          "path": "/cgi-bin/material/add_material",
+          "name": "中文 配图.png",
+          "type": "image/png",
+          "size": 13179
+        }
+      ],
+      "draftImages": [
+        1
+      ]
+    },
+    {
+      "mode": "direct-https-response",
+      "name": "markdown-relative",
+      "result": {
+        "mediaId": "synthetic-draft",
+        "accountName": "测试号"
+      },
+      "uploads": [
+        {
+          "path": "/cgi-bin/media/uploadimg",
+          "name": "中文 配图.png",
+          "type": "image/png",
+          "size": 13179
+        },
+        {
+          "path": "/cgi-bin/material/add_material",
+          "name": "中文 配图.png",
+          "type": "image/png",
+          "size": 13179
+        }
+      ],
+      "draftImages": [
+        1
+      ]
+    },
+    {
+      "mode": "direct-https-response",
+      "name": "markdown-reference",
+      "result": {
+        "mediaId": "synthetic-draft",
+        "accountName": "测试号"
+      },
+      "uploads": [
+        {
+          "path": "/cgi-bin/media/uploadimg",
+          "name": "中文 配图.png",
+          "type": "image/png",
+          "size": 13179
+        },
+        {
+          "path": "/cgi-bin/material/add_material",
+          "name": "中文 配图.png",
+          "type": "image/png",
+          "size": 13179
+        }
+      ],
+      "draftImages": [
+        1
+      ]
+    },
+    {
+      "mode": "direct-https-response",
+      "name": "raw-html",
+      "result": {
+        "mediaId": "synthetic-draft",
+        "accountName": "测试号"
+      },
+      "uploads": [
+        {
+          "path": "/cgi-bin/media/uploadimg",
+          "name": "中文 配图.png",
+          "type": "image/png",
+          "size": 13179
+        },
+        {
+          "path": "/cgi-bin/material/add_material",
+          "name": "中文 配图.png",
+          "type": "image/png",
+          "size": 13179
+        }
+      ],
+      "draftImages": [
+        1
+      ]
+    },
+    {
+      "mode": "direct-https-response",
+      "name": "file-url",
+      "result": {
+        "mediaId": "synthetic-draft",
+        "accountName": "测试号"
+      },
+      "uploads": [
+        {
+          "path": "/cgi-bin/media/uploadimg",
+          "name": "photo.jpg",
+          "type": "image/jpeg",
+          "size": 8428
+        },
+        {
+          "path": "/cgi-bin/material/add_material",
+          "name": "photo.jpg",
+          "type": "image/jpeg",
+          "size": 8428
+        }
+      ],
+      "draftImages": [
+        1
+      ]
+    },
+    {
+      "mode": "direct-https-response",
+      "name": "nested-note",
+      "result": {
+        "mediaId": "synthetic-draft",
+        "accountName": "测试号"
+      },
+      "uploads": [
+        {
+          "path": "/cgi-bin/media/uploadimg",
+          "name": "同名.png",
+          "type": "image/png",
+          "size": 6015
+        },
+        {
+          "path": "/cgi-bin/material/add_material",
+          "name": "同名.png",
+          "type": "image/png",
+          "size": 6015
+        }
+      ],
+      "draftImages": [
+        2
+      ]
+    },
+    {
+      "mode": "direct-https-response",
+      "name": "svg",
+      "result": {
+        "mediaId": "synthetic-draft",
+        "accountName": "测试号"
+      },
+      "uploads": [
+        {
+          "path": "/cgi-bin/media/uploadimg",
+          "name": "vector.png",
+          "type": "image/png",
+          "size": 1636
+        },
+        {
+          "path": "/cgi-bin/material/add_material",
+          "name": "vector.png",
+          "type": "image/png",
+          "size": 1636
+        }
+      ],
+      "draftImages": [
+        1
+      ]
+    },
+    {
+      "mode": "direct-https-response",
+      "name": "webp",
+      "result": {
+        "mediaId": "synthetic-draft",
+        "accountName": "测试号"
+      },
+      "uploads": [
+        {
+          "path": "/cgi-bin/media/uploadimg",
+          "name": "image.jpg",
+          "type": "image/jpeg",
+          "size": 6988
+        },
+        {
+          "path": "/cgi-bin/material/add_material",
+          "name": "image.jpg",
+          "type": "image/jpeg",
+          "size": 6988
+        }
+      ],
+      "draftImages": [
+        1
+      ]
+    },
+    {
+      "mode": "direct-https-response",
+      "name": "duplicate",
+      "result": {
+        "mediaId": "synthetic-draft",
+        "accountName": "测试号"
+      },
+      "uploads": [
+        {
+          "path": "/cgi-bin/media/uploadimg",
+          "name": "photo.jpg",
+          "type": "image/jpeg",
+          "size": 8428
+        },
+        {
+          "path": "/cgi-bin/material/add_material",
+          "name": "photo.jpg",
+          "type": "image/jpeg",
+          "size": 8428
+        }
+      ],
+      "draftImages": [
+        2
+      ]
+    },
+    {
+      "mode": "direct-https-response",
+      "name": "missing",
+      "result": {
+        "error": "Error: 图片「附件/不存在.png」未能加载，请检查附件是否存在。"
+      },
+      "uploads": [],
+      "draftImages": []
+    },
+    {
+      "mode": "direct-https-response",
+      "name": "draft-edit",
+      "result": {
+        "mediaId": "synthetic-draft",
+        "accountName": "测试号"
+      },
+      "uploads": [
+        {
+          "path": "/cgi-bin/media/uploadimg",
+          "name": "中文 配图.png",
+          "type": "image/png",
+          "size": 13179
+        },
+        {
+          "path": "/cgi-bin/material/add_material",
+          "name": "中文 配图.png",
+          "type": "image/png",
+          "size": 13179
+        }
+      ],
+      "draftImages": [
+        1
+      ]
+    },
+    {
+      "mode": "direct-http-response",
+      "name": "create",
+      "result": {
+        "mediaId": "synthetic-draft",
+        "accountName": "测试号"
+      },
+      "uploads": [
+        {
+          "path": "/cgi-bin/media/uploadimg",
+          "name": "中文 配图.png",
+          "type": "image/png",
+          "size": 13179
+        },
+        {
+          "path": "/cgi-bin/material/add_material",
+          "name": "中文 配图.png",
+          "type": "image/png",
+          "size": 13179
+        }
+      ],
+      "draftCalls": 1
+    },
+    {
+      "mode": "direct-http-response",
+      "name": "update",
+      "result": {
+        "mediaId": "existing-draft",
+        "accountName": "测试号"
+      },
+      "uploads": [
+        {
+          "path": "/cgi-bin/media/uploadimg",
+          "name": "中文 配图.png",
+          "type": "image/png",
+          "size": 13179
+        },
+        {
+          "path": "/cgi-bin/material/add_material",
+          "name": "中文 配图.png",
+          "type": "image/png",
+          "size": 13179
+        }
+      ],
+      "draftCalls": 1
+    },
+    {
+      "mode": "upload-error",
+      "error": "Error: 微信接口请求失败（微信错误码 45001）",
+      "draftCalls": 0,
+      "uploads": 1
+    },
+    {
+      "mode": "direct-size",
+      "name": "large.png",
+      "inputBytes": 4129956,
+      "result": {
+        "url": "https://mmbiz.qpic.cn/synthetic/0"
+      },
+      "uploads": [
+        {
+          "path": "/cgi-bin/media/uploadimg",
+          "name": "image.jpg",
+          "type": "image/jpeg",
+          "size": 880729
+        }
+      ]
+    },
+    {
+      "mode": "direct-size",
+      "name": "too-large.png",
+      "inputBytes": 22020096,
+      "result": {
+        "error": "Error: 图片为空或超过 20 MB"
+      },
+      "uploads": []
+    },
+    {
+      "mode": "direct-size",
+      "name": "empty.png",
+      "inputBytes": 0,
+      "result": {
+        "error": "Error: 图片为空或超过 20 MB"
+      },
+      "uploads": []
+    },
+    {
+      "mode": "real-local-relay",
+      "name": "wikilink",
+      "result": {
+        "mediaId": "synthetic-draft-25",
+        "accountName": "本地测试号",
+        "readback": {
+          "title": "wikilink"
+        }
+      }
+    },
+    {
+      "mode": "real-local-relay",
+      "name": "markdown-relative",
+      "result": {
+        "mediaId": "synthetic-draft-27",
+        "accountName": "本地测试号",
+        "readback": {
+          "title": "markdown-relative"
+        }
+      }
+    },
+    {
+      "mode": "real-local-relay",
+      "name": "markdown-reference",
+      "result": {
+        "mediaId": "synthetic-draft-29",
+        "accountName": "本地测试号",
+        "readback": {
+          "title": "markdown-reference"
+        }
+      }
+    },
+    {
+      "mode": "real-local-relay",
+      "name": "raw-html",
+      "result": {
+        "mediaId": "synthetic-draft-31",
+        "accountName": "本地测试号",
+        "readback": {
+          "title": "raw-html"
+        }
+      }
+    },
+    {
+      "mode": "real-local-relay",
+      "name": "nested-note",
+      "result": {
+        "mediaId": "synthetic-draft-33",
+        "accountName": "本地测试号",
+        "readback": {
+          "title": "nested-note"
+        }
+      }
+    },
+    {
+      "mode": "real-local-relay",
+      "name": "duplicate",
+      "result": {
+        "mediaId": "synthetic-draft-35",
+        "accountName": "本地测试号",
+        "readback": {
+          "title": "duplicate"
+        }
+      }
+    },
+    {
+      "mode": "real-local-relay",
+      "name": "svg",
+      "result": {
+        "mediaId": "synthetic-draft-37",
+        "accountName": "本地测试号",
+        "readback": {
+          "title": "svg"
+        }
+      }
+    },
+    {
+      "mode": "real-local-relay",
+      "name": "webp",
+      "result": {
+        "mediaId": "synthetic-draft-39",
+        "accountName": "本地测试号",
+        "readback": {
+          "title": "webp"
+        }
+      }
+    },
+    {
+      "mode": "real-local-relay",
+      "name": "missing",
+      "result": {
+        "error": "Error: 图片「附件/不存在.png」未能加载，请检查附件是否存在。"
+      }
+    }
+  ],
+  "relay-fixed": [
+    {
+      "name": "wikilink",
+      "result": {
+        "mediaId": "synthetic-draft-41",
+        "accountName": "本地测试号",
+        "readback": {
+          "title": "wikilink"
+        }
+      }
+    },
+    {
+      "name": "markdown-relative",
+      "result": {
+        "mediaId": "synthetic-draft-43",
+        "accountName": "本地测试号",
+        "readback": {
+          "title": "markdown-relative"
+        }
+      }
+    },
+    {
+      "name": "markdown-reference",
+      "result": {
+        "mediaId": "synthetic-draft-45",
+        "accountName": "本地测试号",
+        "readback": {
+          "title": "markdown-reference"
+        }
+      }
+    },
+    {
+      "name": "raw-html",
+      "result": {
+        "mediaId": "synthetic-draft-47",
+        "accountName": "本地测试号",
+        "readback": {
+          "title": "raw-html"
+        }
+      }
+    },
+    {
+      "name": "file-url",
+      "result": {
+        "mediaId": "synthetic-draft-49",
+        "accountName": "本地测试号",
+        "readback": {
+          "title": "file-url"
+        }
+      }
+    },
+    {
+      "name": "nested-note",
+      "result": {
+        "mediaId": "synthetic-draft-51",
+        "accountName": "本地测试号",
+        "readback": {
+          "title": "nested-note"
+        }
+      }
+    },
+    {
+      "name": "duplicate",
+      "result": {
+        "mediaId": "synthetic-draft-53",
+        "accountName": "本地测试号",
+        "readback": {
+          "title": "duplicate"
+        }
+      }
+    },
+    {
+      "name": "svg",
+      "result": {
+        "mediaId": "synthetic-draft-55",
+        "accountName": "本地测试号",
+        "readback": {
+          "title": "svg"
+        }
+      }
+    },
+    {
+      "name": "webp",
+      "result": {
+        "mediaId": "synthetic-draft-57",
+        "accountName": "本地测试号",
+        "readback": {
+          "title": "webp"
+        }
+      }
+    },
+    {
+      "name": "missing",
+      "result": {
+        "error": "Error: 图片「附件/不存在.png」未能加载，请检查附件是否存在。"
+      }
+    },
+    {
+      "name": "large",
+      "result": "uploaded"
+    }
+  ],
+  "installed-fixed": [
+    {
+      "name": "wikilink",
+      "before": {
+        "warnings": [],
+        "checks": "",
+        "disabled": false,
+        "imagePaths": [
+          "文章/附件/中文 配图.png"
+        ]
+      },
+      "closed": true,
+      "status": "创建草稿",
+      "recordedMediaId": "synthetic-draft-10"
+    },
+    {
+      "name": "markdown-reference",
+      "before": {
+        "warnings": [],
+        "checks": "",
+        "disabled": false,
+        "imagePaths": [
+          "文章/附件/中文 配图.png"
+        ]
+      },
+      "closed": true,
+      "status": "创建草稿",
+      "recordedMediaId": "synthetic-draft-12"
+    },
+    {
+      "name": "raw-html",
+      "before": {
+        "warnings": [],
+        "checks": "",
+        "disabled": false,
+        "imagePaths": [
+          "文章/附件/中文 配图.png"
+        ]
+      },
+      "closed": true,
+      "status": "创建草稿",
+      "recordedMediaId": "synthetic-draft-14"
+    },
+    {
+      "name": "file-url",
+      "before": {
+        "warnings": [],
+        "checks": "",
+        "disabled": false,
+        "imagePaths": [
+          "文章/附件/photo.jpg"
+        ]
+      },
+      "closed": true,
+      "status": "创建草稿",
+      "recordedMediaId": "synthetic-draft-16"
+    },
+    {
+      "name": "nested-note",
+      "before": {
+        "warnings": [],
+        "checks": "",
+        "disabled": false,
+        "imagePaths": [
+          "子笔记/附件/同名.png",
+          "子笔记/附件/同名.png"
+        ]
+      },
+      "closed": true,
+      "status": "创建草稿",
+      "recordedMediaId": "synthetic-draft-18"
+    },
+    {
+      "name": "svg",
+      "before": {
+        "warnings": [],
+        "checks": "",
+        "disabled": false,
+        "imagePaths": [
+          "文章/附件/vector.svg"
+        ]
+      },
+      "closed": true,
+      "status": "创建草稿",
+      "recordedMediaId": "synthetic-draft-20"
+    },
+    {
+      "name": "duplicate",
+      "before": {
+        "warnings": [],
+        "checks": "",
+        "disabled": false,
+        "imagePaths": [
+          "文章/附件/photo.jpg",
+          "文章/附件/photo.jpg"
+        ]
+      },
+      "closed": true,
+      "status": "创建草稿",
+      "recordedMediaId": "synthetic-draft-22"
+    },
+    {
+      "name": "update",
+      "action": "update",
+      "closed": true,
+      "status": "创建草稿",
+      "raw": "---\ncover: 附件/photo.jpg\nwechat_account: relay:qa\nwechat_media_id: synthetic-draft-10\nwechat_draft_at: 2026-10-17T10:00:17.823Z\n---\n![[附件/中文 配图.png]]"
+    }
+  ],
+  "missing-fixed": {
+    "version": "0.2.1",
+    "clipboardWrites": 0,
+    "copyStatus": "复制失败：图片「附件/不存在.png」未能加载，请检查附件是否存在。",
+    "checks": "嵌入内容「附件/不存在.png」无法发布到公众号，已保留为文字。图片「附件/不存在.png」未能加载，请检查附件是否存在。",
+    "publishDisabled": true
+  }
+}

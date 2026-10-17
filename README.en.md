@@ -51,6 +51,14 @@ Add a connection from the publish window or plugin settings. You need a WeChat O
 
 The plugin uses an explicit `cover` image, otherwise the first article image, otherwise a generated title cover. A missing explicit cover blocks sending. Successful sends can record the account and draft ID in note frontmatter so the next send updates the original. The plugin never performs mass publication; review and publish in WeChat yourself.
 
+## X Articles, Zhihu and Xiaohongshu
+
+The desktop publishing window also hands drafts to **Qiaomu Clipper 1.18.7+** in Chrome. Sign in to the chosen platform first. X requires article access; X and Zhihu receive editable article content, images and an optional cropped or generated cover. Xiaohongshu receives 3:4 cards, title, body and topics in its creator editor: review and choose Save draft or Publish yourself. The plugin never clicks public publication.
+
+Markdown edits in the X/Zhihu window apply only to that send. GIFs within the configured limits retain their bytes; oversized GIFs fail with a compression prompt rather than becoming still JPEGs. Xiaohongshu cards are static images. Animated SVGs must first be exported to a format the destination supports, or PNG if a still image is intended.
+
+For each handoff, the plugin opens a temporary random loopback port at `127.0.0.1`. Clipper exchanges a one-time token for the article and media, then uploads them through the signed-in platform page. The port closes when the task ends. This does not use the WeChat relay or collect platform passwords. Do not share a pending handoff link.
+
 ## Privacy and limits
 
 Credentials use Obsidian SecretStorage, not synchronized `data.json`. Sending uploads article content and media through the selected connection. The optional Qiaomu relay receives credentials and content over HTTPS to call WeChat's API. Previewing remote images contacts their hosts; exports download and embed remote images. Connection checks, refreshing the egress IP, loading Bridge accounts and About-page QR images also use the network. Local text formatting does not require networking.
@@ -70,3 +78,7 @@ npm run dev
 [QA record](docs/qa/2026-10-17-release.md) · [Third-party notices](THIRD_PARTY_NOTICES.md) · [MIT license](LICENSE)
 
 By 向阳乔木 — [qiaomu.ai](https://qiaomu.ai/) · [Blog](https://blog.qiaomu.ai/) · [X @vista8](https://x.com/vista8). Theme names describe visual inspiration and do not imply brand affiliation.
+
+### Local images in 0.2.1
+
+Wikilinks, inline/reference Markdown images, vault HTML images and attachments in embedded notes resolve to the file actually shown by Obsidian. Repeated local attachments upload once per draft operation. Static local SVGs become PNGs; SVGs with external resources must be exported first. Animated SVGs need a supported animation format, or PNG if a still image is intended. Missing images block copy, export and draft submission with a repair message. Copy embeds local image bytes but does not upload them to WeChat; use Send to drafts for automatic uploads.

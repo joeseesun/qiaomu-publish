@@ -1,6 +1,7 @@
 import { type App, type Component, getLinkpath, htmlToMarkdown, TFile } from "obsidian";
 import { renderNoteForWechat, type RenderedNote } from "../render-note";
 import { embedWechatImages } from "../copy-html";
+import { assertImageSources, imageKey } from "../image-assets";
 import { BRIDGE_VERSION, type BridgeJob, type PublishTargetId } from "../bridge/protocol";
 import { AssetBag, type ImageCache, imageCacheKey, loadArticleImage, normalizeImage } from "./assets";
 import type { CoverCandidate, CoverSource } from "../cover/source";
@@ -108,10 +109,15 @@ export function applyCover(base: PreparedBase, cover: { data: ArrayBuffer; mime:
   else base.coverId = null;
 }
 
-async function collectImages(app: App, note: RenderedNote, target: PublishTargetId, assets: AssetBag, options: PrepareBaseOptions): Promise<void> {
+async function collectImages(app: App, note: RenderedNote, target: PublishTargetId, assets: AssetBag, options: PrepareBaseOptions): Promise<Map<string, string>> {
+  const ids = new Map<string, string>();
+  const seen = new Map<string | Blob, string>();
   const total = note.images.length;
   for (const [index, image] of note.images.entries()) {
     if (options.signal?.aborted) throw new Error("已取消");
+    const identity = imageKey(image);
+    const previous = seen.get(identity);
+    if (previous) { ids.set(image.id, previous); continue; }
     options.onProgress?.(`准备图片 ${index + 1}/${total}：${image.name}`);
     const key = imageCacheKey(image);
     const normalizedKey = key ? `n:${target}:${key}` : null;
@@ -122,7 +128,10 @@ async function collectImages(app: App, note: RenderedNote, target: PublishTarget
       if (normalizedKey) options.cache?.set(normalizedKey, normalized);
     }
     assets.add(image.id, normalized.data, normalized.mime, normalized.name);
+    seen.set(identity, image.id);
+    ids.set(image.id, image.id);
   }
+  return ids;
 }
 
 function rewriteImages(html: string, address: (id: string) => string): { html: string; ids: string[] } {
@@ -130,7 +139,7 @@ function rewriteImages(html: string, address: (id: string) => string): { html: s
   const ids: string[] = [];
   for (const image of Array.from(doc.querySelectorAll("img"))) {
     const id = image.getAttribute("data-qm-image");
-    if (!id) { image.remove(); continue; }
+    if (!id) throw new Error(`图片「${image.getAttribute("alt") || "未命名"}」未能准备，请检查图片引用后重试。`);
     image.setAttribute("src", address(id));
     image.removeAttribute("data-qm-image");
     image.removeAttribute("style");
@@ -162,17 +171,21 @@ export async function prepareBase(app: App, file: TFile, component: Component, t
   let disposed = false;
   const dispose = () => { if (disposed) return; disposed = true; note.dispose(); };
   try {
+    assertImageSources(note.html, note.images, note.imageErrors);
     let coverId: string | null = null;
     let xBody = "";
     let previewHtml = "";
     let embeddedHtml = "";
     if (target === "xhs") {
       options.onProgress?.("读取图片…");
-      embeddedHtml = await embedWechatImages(app, note.html, note.images, true);
+      embeddedHtml = await embedWechatImages(app, note.html, note.images, true, note.imageErrors);
+      if (note.images.some(image => /\.gif(?:$|[?#])/i.test(image.name) || (image.kind === "generated" && image.blob.type === "image/gif"))) {
+        note.warnings.push("小红书图文卡片是静态图片，GIF 只会显示其中一帧；需要动图时请在小红书中单独上传原文件。");
+      }
     } else {
-      await collectImages(app, note, target, assets, options);
-      previewHtml = rewriteImages(note.html, (id) => `${PREVIEW_IMAGE_SCHEME}${id}`).html;
-      if (target === "x") xBody = xMarkdown(rewriteImages(note.html, (id) => `${X_IMAGE_HOST}${id}`).html);
+      const ids = await collectImages(app, note, target, assets, options);
+      previewHtml = rewriteImages(note.html, (id) => `${PREVIEW_IMAGE_SCHEME}${ids.get(id) ?? id}`).html;
+      if (target === "x") xBody = xMarkdown(rewriteImages(note.html, (id) => `${X_IMAGE_HOST}${ids.get(id) ?? id}`).html);
     }
     return { target, note, assets, warnings: [...note.warnings], coverId, xBody, previewHtml, embeddedHtml, plainText: plainText(note.html), dispose };
   } catch (error) {

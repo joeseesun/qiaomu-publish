@@ -1,6 +1,6 @@
 # 开发约定
 
-- Qiaomu Publish 只负责把笔记排成公众号格式并发送到草稿箱；与 AI 对话相关的能力放在 Qiaomu Agent。
+- Qiaomu Publish 负责笔记排版和平台草稿：公众号经 API 发送，X、知乎、小红书经 Qiaomu Clipper 写入浏览器编辑器，由用户检查后发布；与 AI 对话相关的能力放在 Qiaomu Agent。
 - 插件 ID `qiaomu-publish`、命令 ID 和 SecretStorage 键名发布后不可随意更改；迁移旧数据时只读不写乔木 Agent 的数据。
 
 ## 图标规范
