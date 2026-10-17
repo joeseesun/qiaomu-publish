@@ -1,6 +1,6 @@
 {
   "name": "qiaomu-publish",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Format notes for WeChat drafts, X Articles, Zhihu and Xiaohongshu with Qiaomu Clipper.",
   "type": "module",
   "main": "main.js",
