@@ -8,13 +8,25 @@ Write in Obsidian, preview your WeChat Official Account article, then copy the f
 
 ![Markdown beside the live article preview](docs/assets/live-preview.png)
 
-[Download the latest release](https://github.com/joeseesun/qiaomu-publish/releases/latest) · [Community directory](https://community.obsidian.md/plugins/qiaomu-publish) · [Report an issue](https://github.com/joeseesun/qiaomu-publish/issues)
+[**Install from the official community directory**](https://community.obsidian.md/plugins/qiaomu-publish) · [Release notes](https://github.com/joeseesun/qiaomu-publish/releases) · [Report an issue](https://github.com/joeseesun/qiaomu-publish/issues)
 
 ## Start without an account
 
-Requires Obsidian **1.11.4+**. Download `main.js`, `manifest.json` and `styles.css` from the same release, place them in `<vault>/.obsidian/plugins/qiaomu-publish/`, restart Obsidian and enable Qiaomu Publish under Community plugins. Preserve `data.json` when updating. If the community listing is not yet available in your client, use this manual path.
+Requires Obsidian **1.11.4+**.
 
-Open a Markdown note and run **实时预览当前笔记的公众号排版** from the command palette, or click the smartphone ribbon icon. The plugin UI is currently Chinese. Preview, formatting, copying and exports work without configuring an account.
+1. Open the [official community listing](https://community.obsidian.md/plugins/qiaomu-publish), click **Add to Obsidian**, then **Install → Enable** in Obsidian.
+2. Open a Markdown note and run **实时预览当前笔记的公众号排版** from the command palette, or click the smartphone ribbon icon.
+
+Alternatively, open **Settings → Community plugins → Browse**, search for **Qiaomu Publish**, and install and enable it.
+
+Check for future updates under **Settings → Community plugins**. The plugin UI is currently Chinese. Preview, formatting, copying and exports work without configuring an account.
+
+<details>
+<summary>Alternative: manual installation</summary>
+
+Download `main.js`, `manifest.json` and `styles.css` from the same [GitHub release](https://github.com/joeseesun/qiaomu-publish/releases/latest), place them in `<vault>/.obsidian/plugins/qiaomu-publish/`, restart Obsidian and enable Qiaomu Publish under Community plugins. Preserve `data.json` when updating manually.
+
+</details>
 
 ## What it removes from your workflow
 
