@@ -49,6 +49,8 @@ Screenshots show the real plugin in an isolated Obsidian vault. The account show
 
 Add a connection from the publish window or plugin settings. You need a WeChat Official Account AppID, AppSecret, the relevant API permissions and IP allowlisting. Choose the Qiaomu fixed-IP relay, direct API access from your device, or an existing self-hosted qmblog Bridge. Multiple accounts are supported. The current Bridge integration creates new drafts only.
 
+Direct mode includes an optional public IPv4 lookup and copy button in both connection forms. Add the address to WeChat's API IP allowlist and test the connection. Query again after changing networks or VPN settings. Proxy routing can give the lookup service and WeChat different source addresses; when WeChat rejects an IP, its reported address takes precedence and becomes available to copy.
+
 The plugin uses an explicit `cover` image, otherwise the first article image, otherwise a generated title cover. A missing explicit cover blocks sending. Successful sends can record the account and draft ID in note frontmatter so the next send updates the original. The plugin never performs mass publication; review and publish in WeChat yourself.
 
 ## X Articles, Zhihu and Xiaohongshu
@@ -62,6 +64,8 @@ For each handoff, the plugin opens a temporary random loopback port at `127.0.0.
 ## Privacy and limits
 
 Credentials use Obsidian SecretStorage, not synchronized `data.json`. Sending uploads article content and media through the selected connection. The optional Qiaomu relay receives credentials and content over HTTPS to call WeChat's API. Previewing remote images contacts their hosts; exports download and embed remote images. Connection checks, refreshing the egress IP, loading Bridge accounts and About-page QR images also use the network. Local text formatting does not require networking.
+
+Clicking the direct-mode IP lookup contacts [ipify](https://www.ipify.org/) over HTTPS for your public IPv4 address. It sends no AppID, AppSecret or article content, runs only on demand, and does not persist the result. An unavailable lookup does not prevent testing your WeChat connection.
 
 First-run migration reads the older Qiaomu Agent publishing settings in the same vault without modifying Agent files. Audio, video and embedded web pages require manual insertion in WeChat. Installed fonts and dark rendering may differ on readers' devices. Very long PNG exports reduce resolution with a notice.
 

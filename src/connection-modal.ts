@@ -1,6 +1,7 @@
 import { type App, Modal, Notice, Setting } from "obsidian";
 import type QiaomuPublishPlugin from "./main";
 import { WechatDirectClient } from "./direct-client";
+import { DirectIpHelp } from "./direct-ip-help";
 import { WechatRelayClient, knownRelayEgressIps, relayEgressIps } from "./relay-client";
 import { QIAOMU_RELAY_CODE, QIAOMU_RELAY_URL } from "./defaults";
 import { connectionSecretId, isSecretId, optionalSecret } from "./secret-storage";
@@ -16,6 +17,7 @@ export class ConnectionModal extends Modal {
   private forceSave!: HTMLButtonElement;
   private ips!: HTMLElement;
   private relayBox!: HTMLElement;
+  private directIp!: DirectIpHelp;
   private busy = false;
   private pendingDelete = false;
   private closed = false;
@@ -43,7 +45,9 @@ export class ConnectionModal extends Modal {
       .addText((text) => text.setPlaceholder("例如：乔木的公众号").setValue(this.draft.name).onChange((value) => { this.draft.name = value.trim(); }));
     new Setting(form).setName("连接方式").setDesc("中转由乔木服务器代为访问微信，IP 固定；直连使用本机网络，需要本机出口 IP 在白名单内。")
       .addDropdown((dropdown) => dropdown.addOption("relay", "固定 IP 中转（推荐）").addOption("direct", "当前设备直连").setValue(this.draft.mode)
-        .onChange((value) => { this.draft.mode = value as Mode; this.relayBox.toggleClass("is-hidden", this.draft.mode !== "relay"); }));
+        .onChange((value) => { this.draft.mode = value as Mode; this.relayBox.toggleClass("is-hidden", this.draft.mode !== "relay"); this.directIp.setActive(this.draft.mode === "direct"); }));
+    this.directIp = new DirectIpHelp(form);
+    this.directIp.setActive(this.draft.mode === "direct");
     new Setting(form).setName("AppID").addText((text) => text.setPlaceholder("wx 开头").setValue(this.draft.appId).onChange((value) => { this.draft.appId = value.trim(); }));
     const secret = new Setting(form).setName("AppSecret");
     secret.addText((text) => {
@@ -88,7 +92,7 @@ export class ConnectionModal extends Modal {
     this.primary.addEventListener("click", () => void this.save(true));
   }
 
-  override onClose(): void { this.closed = true; this.contentEl.empty(); }
+  override onClose(): void { this.closed = true; this.directIp?.destroy(); this.contentEl.empty(); }
 
   private showIps(ips: string[]): void {
     this.ips.empty();
@@ -146,6 +150,8 @@ export class ConnectionModal extends Modal {
       this.onDone();
       this.close();
     } catch (error) {
+      if (this.closed) return;
+      if (this.draft.mode === "direct") this.directIp.showWechatError(error);
       this.setBusy(false, `${test ? "连接失败" : "保存失败"}：${error instanceof Error ? error.message : String(error)}`);
       if (test) this.forceSave.hidden = false;
     }
