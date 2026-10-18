@@ -13,3 +13,9 @@ Verified through the public HTTPS endpoint:
 Daily relay limits remain 100 requests per AppID, reset at UTC midnight, with counters persisted across service restarts. Fourteen focused backend tests passed locally and on the production Node 18 runtime; backend lint, 307 repository tests and production build passed.
 
 No drafts, materials or public articles were created. A third-party user's real draft delivery is not covered by this verification.
+
+## Quota policy update, 08:11 Asia/Shanghai
+
+The subsequent user-authorized policy replaces the initial 100-request allowance above: ordinary accounts now receive **200 relay requests per UTC day**. The two server-configured owner accounts are exempt from daily quotas only when both their exact private-list AppID and server-stored AppSecret match. Authorization, HTTPS and short-term burst limits still apply.
+
+Eighteen focused backend tests passed locally and on production Node 18.19.1. Tests cover the 200/201 boundary across restart, owner exemptions, forged owner credentials and retained burst limits; backend lint, 307 repository tests and production build also passed. An isolated production-host process verified both real owners still connect with deliberately exhausted counters and ordinary requests stop at 201. After deployment, public HTTPS checks confirmed both real owners connect without incrementing daily usage; ordinary access, legacy v1 and HTTPS enforcement remain working. No real drafts or materials were created.
