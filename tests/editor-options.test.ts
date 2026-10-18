@@ -17,13 +17,11 @@ describe("editor options", () => {
       .toEqual({ primaryColor: "#07c160", fontFamily: "serif", codeTheme: "nord", justify: true, macCode: false, customCss: ".wechat-export-content h2{color:red}" });
   });
 
-  it("replaces the accent of every theme with the primary colour and nothing else", () => {
-    for (const theme of listWechatThemes()) {
-      const plain = build({}, theme.id);
-      const tinted = build({ primaryColor: "#12ab34" }, theme.id);
-      expect(tinted.toLowerCase()).toContain("#12ab34");
-      expect(plain.toLowerCase()).not.toContain("#12ab34");
-    }
+  it.each(listWechatThemes())("replaces the accent of $id with the primary colour and nothing else", (theme) => {
+    const plain = build({}, theme.id);
+    const tinted = build({ primaryColor: "#12ab34" }, theme.id);
+    expect(tinted.toLowerCase()).toContain("#12ab34");
+    expect(plain.toLowerCase()).not.toContain("#12ab34");
   });
 
   it("turns link footnotes and image captions off", () => {

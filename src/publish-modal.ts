@@ -8,6 +8,7 @@ import { type DraftMeta, metaFromFrontmatter, preflight, publishDraft, recordDra
 import { renderNoteForWechat, type ArticleImage, type RenderedNote } from "./render-note";
 import { copyWechatHtml } from "./copy-html";
 import { WechatDirectClient } from "./direct-client";
+import { DirectIpHelp } from "./direct-ip-help";
 import { WechatRelayClient, knownRelayEgressIps, relayEgressIps } from "./relay-client";
 import type QiaomuPublishPlugin from "./main";
 import { QIAOMU_RELAY_CODE, QIAOMU_RELAY_URL } from "./defaults";
@@ -45,6 +46,7 @@ export class WechatPublishModal extends Modal {
   private screen!: HTMLElement;
   private previewTimer: number | null = null;
   private checksTimer: number | null = null;
+  private directIp: DirectIpHelp | null = null;
 
   private readonly settings: WechatPublishSettings;
 
@@ -66,6 +68,7 @@ export class WechatPublishModal extends Modal {
   }
 
   override onClose(): void {
+    this.directIp?.destroy();
     if (this.previewTimer !== null) window.clearTimeout(this.previewTimer);
     if (this.checksTimer !== null) window.clearTimeout(this.checksTimer);
     this.cover?.destroy();
@@ -284,9 +287,11 @@ export class WechatPublishModal extends Modal {
     const mode = new Setting(panel).setName("连接方式").addDropdown((dropdown) => {
       dropdown.addOption("relay", "固定 IP 中转（推荐）");
       dropdown.addOption("direct", "当前设备直连");
-      dropdown.onChange((value) => { input.mode = value as "relay" | "direct"; relayFields.toggleClass("is-hidden", value !== "relay"); });
+      dropdown.onChange((value) => { input.mode = value as "relay" | "direct"; relayFields.toggleClass("is-hidden", value !== "relay"); directIp.setActive(value === "direct"); });
     });
     mode.setDesc("直连要求当前设备的公网出口 IP 已加入公众号 API 白名单。");
+    this.directIp?.destroy();
+    const directIp = this.directIp = new DirectIpHelp(panel);
     const relayFields = panel.createDiv();
     relayFields.createEl("p", { text: "通过乔木服务器访问微信；AppSecret 只在请求期间经 HTTPS 传输，不保存在中转服务器。" });
     new Setting(relayFields).setName("乔木中转地址").setDesc("填 HTTPS 地址；公众号后台的 API 白名单要填下方显示的固定公网 IP。")
@@ -349,7 +354,11 @@ export class WechatPublishModal extends Modal {
         this.meta!.accountId = id;
         this.contentEl.empty();
         this.renderForm();
-      } catch (error) { status.setText(`连接失败：${error instanceof Error ? error.message : String(error)}`); }
+      } catch (error) {
+        if (!panel.isConnected) return;
+        if (input.mode === "direct") directIp.showWechatError(error);
+        status.setText(`连接失败：${error instanceof Error ? error.message : String(error)}`);
+      }
       finally { connectButton.disabled = false; panel.inert = false; }
     })());
   }

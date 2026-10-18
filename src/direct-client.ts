@@ -1,4 +1,5 @@
 import { requestUrl } from "obsidian";
+import { publicIpv4, WechatIpWhitelistError } from "./direct-ip";
 import type { WechatAccount, WechatDraftRequest, WechatDraftResult } from "./bridge-client";
 import type { WechatTransport } from "./transport";
 
@@ -12,7 +13,7 @@ function wxError(payload: WxPayload, fallback: string): Error {
   const code = payload.errcode;
   if (code === 40164) {
     const ip = /\b(?:\d{1,3}\.){3}\d{1,3}\b/.exec(payload.errmsg ?? "")?.[0];
-    return new Error(ip ? `微信拒绝当前出口 IP ${ip}。请在公众号后台把该 IP 加入 API 白名单。` : "微信拒绝当前出口 IP。请在公众号后台查看 API 白名单，并确认当前网络的出口 IP。");
+    return new WechatIpWhitelistError(publicIpv4(ip));
   }
   if (code === 40013 || code === 40125) return new Error("公众号 AppID 或 AppSecret 无效，请检查后重试。");
   if (code === 48001) return new Error("此公众号没有调用该微信接口的权限，请在公众号后台检查接口权限。");

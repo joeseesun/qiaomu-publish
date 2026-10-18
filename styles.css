@@ -261,18 +261,29 @@
 
 /* Account dialog */
 .qp-modal { width: min(540px, 94vw); }
-.qp-modal .modal-content { display: flex; flex-direction: column; gap: 0; }
+.qp-modal .modal-content { display: flex; flex-direction: column; min-height: 0; gap: 0; }
+.qp-modal-form { min-height: 0; overflow-y: auto; }
+.qp-modal button[hidden] { display: none; }
 .qp-modal-form .setting-item { padding: 12px 0; border-top: 1px solid var(--qp-line); }
 .qp-hint { margin: 0 0 4px; color: var(--qp-muted); font-size: 13px; line-height: 1.6; }
 .qp-link { display: inline-block; margin-bottom: 8px; color: var(--qp-muted); font-size: 13px; text-decoration: underline; text-decoration-color: var(--qp-line); text-underline-offset: 3px; }
 .qp-link:hover { color: var(--qp-ink); text-decoration-color: currentColor; }
 .qp-callout { margin-top: 8px; padding: 12px 14px; border-radius: 10px; background: var(--qp-soft); box-shadow: 0 0 0 1px var(--qp-line); font-size: 13px; }
 .qp-callout.is-hidden { display: none; }
+.qp-direct-ip { margin: 8px 0; padding: 12px 14px; border-radius: 10px; background: var(--qp-soft, var(--background-secondary)); box-shadow: 0 0 0 1px var(--qp-line, var(--background-modifier-border)); color: var(--qp-ink, var(--text-normal)); font-size: 13px; }
+.qp-direct-ip.is-hidden { display: none; }
+.qp-direct-ip-value { margin: 8px 0; font-family: var(--font-monospace); overflow-wrap: anywhere; user-select: text; }
+.qp-direct-ip-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.qp-direct-ip p, .qp-direct-ip-status { margin: 8px 0 0; color: var(--qp-muted, var(--text-muted)); font-size: 12px; line-height: 1.5; }
+.qp-direct-ip-status:empty { display: none; }
+.qp-direct-ip button { color: var(--qp-ink, var(--text-normal)); background: transparent; box-shadow: 0 0 0 1px var(--qp-line, var(--background-modifier-border)); }
+.qp-direct-ip button:hover:not(:disabled) { background: var(--background-modifier-hover); }
+.qp-direct-ip button:focus-visible { outline: 1px solid var(--qp-focus, var(--text-muted)); outline-offset: 3px; box-shadow: none; }
 .qp-ips { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; color: var(--qp-ink); overflow-wrap: anywhere; }
 .qp-callout-actions { display: flex; gap: 8px; margin-top: 8px; }
 .qp-modal button.qp-link-button { height: auto; padding: 0; border: 0; background: transparent; box-shadow: none; color: var(--qp-muted); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .qp-status { min-height: 1.5em; margin-top: 10px; color: var(--qp-muted); font-size: 13px; overflow-wrap: anywhere; }
-.qp-modal-footer { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--qp-line); }
+.qp-modal-footer { display: flex; flex-shrink: 0; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--qp-line); }
 .qp-spacer { flex: 1; }
 .qp-modal button.qp-danger { color: var(--qp-danger); }
 .qp-modal :is(input:not([type="checkbox"]), select, textarea):focus, .qiaomu-publish-settings :is(input:not([type="checkbox"]), select, textarea):focus { border-color: var(--qp-focus); box-shadow: none; }
