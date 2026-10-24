@@ -252,7 +252,6 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
     release.createSpan({ cls: "qp-version", text: `v${this.plugin.manifest.version}` });
     const actions = hero.createDiv({ cls: "qp-hero-actions" });
     for (const [label, icon, href] of [
-      ["更新日志", "history", "https://github.com/joeseesun/qiaomu-publish/releases"],
       ["反馈问题", "bug", "https://github.com/joeseesun/qiaomu-publish/issues/new"],
       ["使用说明", "book-open", "https://github.com/joeseesun/qiaomu-publish#readme"],
     ] as const) {
@@ -260,6 +259,8 @@ export class QiaomuPublishSettingTab extends PluginSettingTab {
       setIcon(link.createSpan({ attr: { "aria-hidden": "true" } }), icon);
       link.createSpan({ text: label });
     }
+
+    this.plugin.updateNotes.addButton(actions);
 
     const support = about.createDiv({ cls: "qp-support" });
     const qr = (icon: string, label: string, hint: string, src: string, alt: string) => {
