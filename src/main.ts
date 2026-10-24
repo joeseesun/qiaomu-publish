@@ -1,3 +1,5 @@
+import { UpdateNotes } from './update-notes';
+import { UPDATE_ENTRIES } from './update-notes-release';
 import { Menu, type Modal, normalizePath, Notice, Platform, Plugin, TAbstractFile, TFile } from "obsidian";
 import { DEFAULT_SETTINGS, legacyAgentSettings, normalizeSettings } from "./defaults";
 import { QiaomuPublishSettingTab } from "./settings-tab";
@@ -9,6 +11,7 @@ import type { PublishChoice } from "./platform-switch";
 import { WechatPreviewView, WECHAT_PREVIEW_VIEW } from "./preview-view";
 
 export default class QiaomuPublishPlugin extends Plugin {
+  updateNotes!: UpdateNotes;
   override settings: QiaomuPublishSettings = normalizeSettings(DEFAULT_SETTINGS);
   private saveQueue: Promise<void> = Promise.resolve();
   private appearanceListeners = new Set<() => void>();
@@ -29,6 +32,7 @@ export default class QiaomuPublishPlugin extends Plugin {
       }
       if (changed) void this.saveSettings().catch(() => new Notice("排版设置保存失败，请在预览中重试保存"));
     }));
+    this.updateNotes = new UpdateNotes(this, UPDATE_ENTRIES, () => 'zh');
     this.addSettingTab(new QiaomuPublishSettingTab(this.app, this));
     this.addRibbonIcon("smartphone", "预览公众号排版", () => {
       const file = this.app.workspace.getActiveFile();

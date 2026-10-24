@@ -1,15 +1,16 @@
 {
   "name": "qiaomu-publish",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Format notes for WeChat drafts, X Articles, Zhihu and Xiaohongshu with Qiaomu Clipper.",
   "type": "module",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
-    "build": "tsc --noEmit && node esbuild.config.mjs production",
+    "build": "node scripts/test-update-notes.mjs && tsc --noEmit && node esbuild.config.mjs production",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "npm run typecheck && npm run test && npm run build"
+    "check": "npm run typecheck && npm run test && npm run build",
+    "test:update-notes": "node scripts/test-update-notes.mjs"
   },
   "keywords": [
     "obsidian",
