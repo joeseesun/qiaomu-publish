@@ -2,10 +2,10 @@ import { requestUrl } from "obsidian";
 import { publicIpv4, WechatIpWhitelistError } from "./direct-ip";
 import type { WechatAccount, WechatDraftRequest, WechatDraftResult } from "./bridge-client";
 import type { WechatTransport } from "./transport";
+import { jpegFromImage, MAX_IMAGE_SOURCE_BYTES } from "./image-upload";
 
 const API = "https://api.weixin.qq.com";
 const TOKEN_ERRORS = new Set([40001, 40014, 42001]);
-const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 
 interface WxPayload { errcode?: number; errmsg?: string; access_token?: string; expires_in?: number; url?: string; media_id?: string; ip_list?: string[]; }
 
@@ -17,6 +17,7 @@ function wxError(payload: WxPayload, fallback: string): Error {
   }
   if (code === 40013 || code === 40125) return new Error("公众号 AppID 或 AppSecret 无效，请检查后重试。");
   if (code === 48001) return new Error("此公众号没有调用该微信接口的权限，请在公众号后台检查接口权限。");
+  if (code === 45001) return new Error("上传内容超过微信接口限制，请压缩图片后重试（微信错误码 45001）。");
   if (code === 45009) return new Error("微信接口调用次数已达上限，请稍后重试。");
   return new Error(`${fallback}${code !== undefined ? `（微信错误码 ${code}）` : ""}`);
 }
@@ -35,26 +36,6 @@ function multipart(name: string, type: string, data: ArrayBuffer): { body: Array
   body.set(new Uint8Array(data), head.length);
   body.set(tail, head.length + data.byteLength);
   return { body: body.buffer, contentType: `multipart/form-data; boundary=${boundary}` };
-}
-
-async function jpegFromImage(data: ArrayBuffer, type: string, maxBytes: number): Promise<ArrayBuffer> {
-  const bitmap = await createImageBitmap(new Blob([data], { type }));
-  try {
-    const canvas = document.createElement("canvas");
-    const scale = Math.min(1, Math.sqrt(4_000_000 / (bitmap.width * bitmap.height)));
-    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-    const context = canvas.getContext("2d");
-    if (!context) throw new Error("设备无法转换图片");
-    context.fillStyle = "#fff";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    for (const quality of [0.86, 0.72, 0.58, 0.44]) {
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
-      if (blob && blob.size <= maxBytes) return blob.arrayBuffer();
-    }
-    throw new Error("图片转换后仍超过微信大小限制，请压缩后重试");
-  } finally { bitmap.close(); }
 }
 
 /** Direct WeChat API access. Requires the device's current egress IP on the official-account whitelist. */
@@ -94,7 +75,7 @@ export class WechatDirectClient implements WechatTransport {
 
   async uploadImage(accountId: string, kind: "content" | "cover", fileName: string, contentType: string, data: ArrayBuffer): Promise<{ url?: string; media_id?: string }> {
     if (accountId !== this.account.id) throw new Error("公众号不匹配");
-    if (!data.byteLength || data.byteLength > MAX_IMAGE_BYTES) throw new Error("图片为空或超过 20 MB");
+    if (!data.byteLength || data.byteLength > MAX_IMAGE_SOURCE_BYTES) throw new Error("图片为空或超过 50 MB");
     if (kind === "content" && contentType === "image/gif" && data.byteLength > 10 * 1024 * 1024) throw new Error("GIF 超过 10 MB，请压缩后重试");
     const maxBytes = kind === "content" && contentType === "image/gif" ? 10 * 1024 * 1024 : 1024 * 1024;
     const native = ["image/jpeg", "image/png", "image/gif"].includes(contentType);
@@ -119,7 +100,7 @@ export class WechatDirectClient implements WechatTransport {
     const parsed = new URL(url);
     if (parsed.protocol !== "https:" || /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(parsed.hostname)) throw new Error("远程图片必须使用公网 HTTPS 地址");
     const response = await requestUrl({ url, throw: false });
-    if (response.status !== 200 || response.arrayBuffer.byteLength > MAX_IMAGE_BYTES) throw new Error("远程图片无法读取或超过 20 MB");
+    if (response.status !== 200 || response.arrayBuffer.byteLength > MAX_IMAGE_SOURCE_BYTES) throw new Error("远程图片无法读取或超过 50 MB");
     const type = (response.headers["content-type"] ?? "image/jpeg").split(";")[0]!.trim().toLowerCase();
     return this.uploadImage(this.account.id, kind, parsed.pathname.split("/").pop() || "image.jpg", type, response.arrayBuffer);
   }

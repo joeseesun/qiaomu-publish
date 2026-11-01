@@ -1,3 +1,4 @@
+import { prepareRelayImage } from "./image-upload";
 import { requestUrl, type RequestUrlParam } from "obsidian";
 import { normalizeBridgeUrl, type WechatAccount, type WechatDraftRequest, type WechatDraftResult } from "./bridge-client";
 import type { WechatTransport } from "./transport";
@@ -50,12 +51,14 @@ export class WechatRelayClient implements WechatTransport {
     } catch { /* A proxy can return an HTML error page; retain the HTTP diagnosis. */ }
     if (response.status < 200 || response.status >= 300) {
       const message = typeof payload?.error === "string" ? payload.error : `中转 HTTP ${response.status}`;
+      if (response.status === 413) throw new Error("图片或请求内容超过中转服务器上限，请压缩图片，或联系维护者提高上传上限。");
       if (response.status === 503) throw new Error("中转服务尚未配置完成或暂时不可用，请联系维护者；无需更换 AppID 或 AppSecret。");
       if (response.status === 401) throw new Error("中转未授权此连接，请联系中转服务维护者；此错误尚未验证 AppSecret。");
       if (response.status === 404) throw new Error("中转服务版本过旧或地址不匹配，缺少所需接口。请联系维护者更新服务。");
       if (response.status === 429) throw new Error(/过于频繁/.test(message) ? "请求过于频繁，请稍后再试。" : "今日中转请求额度已用完，请明天再试。");
       if (/errcode=40164/.test(message)) throw new Error("微信拒绝此中转服务器的出口 IP。请把上方显示的固定公网 IP 加入公众号 API 白名单。");
       if (/errcode=(40013|40125)/.test(message)) throw new Error("公众号 AppID 或 AppSecret 无效，请检查后重试。");
+      if (/errcode=45001/.test(message)) throw new Error("上传内容超过微信接口限制，请压缩图片后重试（微信错误码 45001）。");
       if (/errcode=48001/.test(message)) throw new Error("此公众号没有调用该微信接口的权限，请在公众号后台检查接口权限。");
       const safeMessage = [this.appSecret, this.appId, this.inviteKey].reduce((text, value) => text.split(value).join("[已隐藏]"), message);
       throw new Error(safeMessage);
@@ -77,8 +80,9 @@ export class WechatRelayClient implements WechatTransport {
 
   async uploadImage(accountId: string, kind: "content" | "cover", fileName: string, contentType: string, data: ArrayBuffer): Promise<{ url?: string; media_id?: string }> {
     if (accountId !== this.account.id) throw new Error("公众号不匹配");
-    const query = new URLSearchParams({ kind, filename: fileName });
-    return this.call(`/v2/wechat/images?${query}`, { method: "POST", contentType, body: data });
+    const prepared = await prepareRelayImage(fileName, contentType, data);
+    const query = new URLSearchParams({ kind, filename: prepared.name });
+    return this.call(`/v2/wechat/images?${query}`, { method: "POST", contentType: prepared.type, body: prepared.data });
   }
 
   async createDraft(body: WechatDraftRequest): Promise<WechatDraftResult> {
