@@ -86,3 +86,5 @@ By 向阳乔木 — [qiaomu.ai](https://qiaomu.ai/) · [Blog](https://blog.qiaom
 ### Local images in 0.2.1
 
 Wikilinks, inline/reference Markdown images, vault HTML images and attachments in embedded notes resolve to the file actually shown by Obsidian. Repeated local attachments upload once per draft operation. Static local SVGs become PNGs; SVGs with external resources must be exported first. Animated SVGs need a supported animation format, or PNG if a still image is intended. Missing images block copy, export and draft submission with a repair message. Copy embeds local image bytes but does not upload them to WeChat; use Send to drafts for automatic uploads.
+
+Source images up to **50 MiB** are accepted for article images, cover selection, copying and export. Draft uploads retain their API-specific compression; static sources above 20 MiB are compressed locally before relay/Bridge upload. GIF upload limits remain transport-specific; oversized animations are rejected rather than flattened to bypass the size limit.

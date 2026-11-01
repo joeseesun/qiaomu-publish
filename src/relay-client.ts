@@ -1,3 +1,4 @@
+import { prepareRelayImage } from "./image-upload";
 import { requestUrl, type RequestUrlParam } from "obsidian";
 import { normalizeBridgeUrl, type WechatAccount, type WechatDraftRequest, type WechatDraftResult } from "./bridge-client";
 import type { WechatTransport } from "./transport";
@@ -77,8 +78,9 @@ export class WechatRelayClient implements WechatTransport {
 
   async uploadImage(accountId: string, kind: "content" | "cover", fileName: string, contentType: string, data: ArrayBuffer): Promise<{ url?: string; media_id?: string }> {
     if (accountId !== this.account.id) throw new Error("公众号不匹配");
-    const query = new URLSearchParams({ kind, filename: fileName });
-    return this.call(`/v2/wechat/images?${query}`, { method: "POST", contentType, body: data });
+    const prepared = await prepareRelayImage(fileName, contentType, data);
+    const query = new URLSearchParams({ kind, filename: prepared.name });
+    return this.call(`/v2/wechat/images?${query}`, { method: "POST", contentType: prepared.type, body: prepared.data });
   }
 
   async createDraft(body: WechatDraftRequest): Promise<WechatDraftResult> {

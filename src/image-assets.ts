@@ -1,3 +1,4 @@
+import { MAX_IMAGE_SOURCE_BYTES } from "./image-upload";
 import type { App } from "obsidian";
 import type { ArticleImage } from "./render-note";
 import { sizeSvg } from "./host-mermaid";
@@ -52,7 +53,7 @@ export async function readArticleImage(app: App, image: ArticleImage): Promise<{
   const type = image.kind === "vault" ? imageMime(image.file.name) : image.blob.type || "image/png";
   if (!type) throw new Error(`公众号不支持的图片格式：${image.name}`);
   const data = image.kind === "vault" ? await app.vault.readBinary(image.file) : await image.blob.arrayBuffer();
-  if (!data.byteLength || data.byteLength > 20 * 1024 * 1024) throw new Error(`图片为空或超过 20 MB：${image.name}`);
+  if (!data.byteLength || data.byteLength > MAX_IMAGE_SOURCE_BYTES) throw new Error(`图片为空或超过 50 MB：${image.name}`);
   if (type !== "image/svg+xml") return { data, type, name: image.name };
   try {
     const svg = prepareLocalSvg(new TextDecoder().decode(data));

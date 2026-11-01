@@ -1,3 +1,4 @@
+import { MAX_IMAGE_SOURCE_BYTES } from "../image-upload";
 /** A picture before it is cut: the original bytes, so cropping can be redone without losing quality. */
 export interface CoverSource {
   data: ArrayBuffer;
@@ -13,7 +14,7 @@ export interface CoverCandidate {
   load(): Promise<CoverSource>;
 }
 
-export const MAX_COVER_SOURCE_BYTES = 40 * 1024 * 1024;
+export const MAX_COVER_SOURCE_BYTES = MAX_IMAGE_SOURCE_BYTES;
 
 export async function decodeSource(source: CoverSource): Promise<ImageBitmap> {
   return createImageBitmap(new Blob([source.data], { type: source.mime }));
@@ -37,7 +38,7 @@ export function chooseImageFile(doc: Document = activeDocument): Promise<CoverSo
       if (!file) { resolve(null); return; }
       const mime = mimeOfFile(file);
       if (!mime) { reject(new Error("这不是图片文件")); return; }
-      if (file.size > MAX_COVER_SOURCE_BYTES) { reject(new Error("图片超过 40MB，请先压缩")); return; }
+      if (file.size > MAX_COVER_SOURCE_BYTES) { reject(new Error("图片超过 50MB，请先压缩")); return; }
       void file.arrayBuffer().then((data) => resolve({ data, mime, name: file.name, origin: "电脑文件" }), reject);
     });
     input.addEventListener("cancel", () => resolve(null));

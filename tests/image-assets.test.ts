@@ -27,7 +27,7 @@ describe("local SVG conversion", () => {
     expect([...new Uint8Array(result.data)]).toEqual([137,80,78,71]);
     expect(svgToPng).toHaveBeenCalledWith(expect.stringContaining("<svg"),100,50,"");
   });
-  it.each([0,20*1024*1024+1])("rejects invalid local byte length %s before encoding",async size=>{
+  it.each([0,50*1024*1024+1])("rejects invalid local byte length %s before encoding",async size=>{
     await expect(readArticleImage({vault:{readBinary:async()=>new ArrayBuffer(size)}} as never,{id:"bad",kind:"vault",name:"bad.png",file:{name:"bad.png"} as never})).rejects.toThrow(/图片为空或超过/);
   });
 });

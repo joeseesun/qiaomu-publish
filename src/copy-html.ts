@@ -1,3 +1,4 @@
+import { MAX_IMAGE_SOURCE_BYTES } from "./image-upload";
 import { requestUrl, type App } from "obsidian";
 import { assertImageSources, imageKey, readArticleImage } from "./image-assets";
 import type { ArticleImage } from "./render-note";
@@ -23,7 +24,7 @@ export async function embedWechatImages(app: App, html: string, images: ArticleI
       if (!remote.has(src)) {
         const response = await requestUrl({ url: src, throw: false });
         const type = Object.entries(response.headers).find(([key]) => key.toLowerCase() === "content-type")?.[1]?.split(";")[0]?.trim().toLowerCase() ?? "";
-        if (response.status !== 200 || !/^image\/(png|jpeg|gif|webp|avif|bmp)$/.test(type) || !response.arrayBuffer.byteLength || response.arrayBuffer.byteLength > 20 * 1024 * 1024) throw new Error("远程图片无法导出，请将图片保存为笔记附件后重试");
+        if (response.status !== 200 || !/^image\/(png|jpeg|gif|webp|avif|bmp)$/.test(type) || !response.arrayBuffer.byteLength || response.arrayBuffer.byteLength > MAX_IMAGE_SOURCE_BYTES) throw new Error("远程图片无法导出，请将图片保存为笔记附件后重试");
         remote.set(src, await blobToDataUrl(new Blob([response.arrayBuffer], { type })));
       }
       image.setAttribute("src", remote.get(src)!);

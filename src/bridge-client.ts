@@ -1,3 +1,4 @@
+import { prepareRelayImage } from "./image-upload";
 import { requestUrl, type RequestUrlParam } from "obsidian";
 
 export interface WechatAccount { id: string; name: string; }
@@ -64,8 +65,9 @@ export class WechatBridgeClient {
   }
 
   async uploadImage(accountId: string, kind: "content" | "cover", fileName: string, contentType: string, data: ArrayBuffer): Promise<{ url?: string; media_id?: string }> {
-    const query = new URLSearchParams({ account_id: accountId, kind, filename: fileName });
-    return this.call(`/v1/wechat/images?${query.toString()}`, { method: "POST", contentType, body: data });
+    const prepared = await prepareRelayImage(fileName, contentType, data);
+    const query = new URLSearchParams({ account_id: accountId, kind, filename: prepared.name });
+    return this.call(`/v1/wechat/images?${query.toString()}`, { method: "POST", contentType: prepared.type, body: prepared.data });
   }
 
   async createDraft(body: WechatDraftRequest): Promise<WechatDraftResult> {
