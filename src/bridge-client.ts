@@ -54,6 +54,7 @@ export class WechatBridgeClient {
       const message = payload && typeof payload === "object" && typeof (payload as { error?: unknown }).error === "string"
         ? (payload as { error: string }).error
         : `HTTP ${response.status}`;
+      if (response.status === 413) throw new Error("图片或请求内容超过 Bridge 服务器上限，请压缩图片，或联系维护者提高上传上限。");
       throw new Error(response.status === 401 ? "Bridge 访问令牌无效" : message);
     }
     return payload as T;

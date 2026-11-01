@@ -17,6 +17,7 @@ function wxError(payload: WxPayload, fallback: string): Error {
   }
   if (code === 40013 || code === 40125) return new Error("公众号 AppID 或 AppSecret 无效，请检查后重试。");
   if (code === 48001) return new Error("此公众号没有调用该微信接口的权限，请在公众号后台检查接口权限。");
+  if (code === 45001) return new Error("上传内容超过微信接口限制，请压缩图片后重试（微信错误码 45001）。");
   if (code === 45009) return new Error("微信接口调用次数已达上限，请稍后重试。");
   return new Error(`${fallback}${code !== undefined ? `（微信错误码 ${code}）` : ""}`);
 }

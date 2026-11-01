@@ -49,6 +49,17 @@ describe("release safety", () => {
     expect(done).not.toHaveBeenCalled();
   });
 
+  it("names the failed image and never creates a partial draft", async () => {
+    const createDraft = vi.fn();
+    const client = { uploadImage: vi.fn(async () => { throw new Error("upstream failed"); }), createDraft };
+    const meta: DraftMeta = { accountId: "test", title: "Test", author: "", digest: "", sourceUrl: "", cover: "", coverText: "", openComment: true };
+    await expect(publishDraft({ app: {} as never, client: client as never, file: { path: "note.md" } as never, meta, wechatHtml: '<img data-qm-image="image" src="app://local/photo.png">',
+      coverImage: { name: "cover.jpg", mime: "image/jpeg", data: new ArrayBuffer(1) },
+      note: { title: "Test", html: "", warnings: [], frontmatter: {}, dispose() {}, images: [{ id: "image", kind: "generated", name: "配图.png", blob: new Blob(["image"], { type: "image/png" }) }] },
+    })).rejects.toThrow("正文图片「配图.png」上传失败：upstream failed");
+    expect(createDraft).not.toHaveBeenCalled();
+  });
+
   it("keeps large cover titles inside the image", () => {
     const ys: number[] = [];
     const context = { font: "", fillRect() {}, measureText(text: string) { return { width: text.length * 80 }; }, fillText(_text: string, _x: number, y: number) { ys.push(y); } };

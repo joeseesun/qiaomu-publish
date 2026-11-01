@@ -7,17 +7,20 @@ export async function jpegFromImage(data: ArrayBuffer, type: string, maxBytes: n
   const bitmap = await createImageBitmap(new Blob([data], { type }));
   try {
     const canvas = document.createElement("canvas");
-    const scale = Math.min(1, Math.sqrt(4_000_000 / (bitmap.width * bitmap.height)));
-    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-    const context = canvas.getContext("2d");
-    if (!context) throw new Error("设备无法转换图片");
-    context.fillStyle = "#fff";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    for (const quality of [0.86, 0.72, 0.58, 0.44]) {
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
-      if (blob && blob.size <= maxBytes) return blob.arrayBuffer();
+    const pixelBudget = Math.min(4_000_000, maxBytes * 4);
+    const initialScale = Math.min(1, Math.sqrt(pixelBudget / (bitmap.width * bitmap.height)), 8192 / Math.max(bitmap.width, bitmap.height));
+    for (const factor of [1, 0.7, 0.49, 0.343]) {
+      canvas.width = Math.max(1, Math.round(bitmap.width * initialScale * factor));
+      canvas.height = Math.max(1, Math.round(bitmap.height * initialScale * factor));
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("设备无法转换图片");
+      context.fillStyle = "#fff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      for (const quality of [0.86, 0.72, 0.58, 0.44]) {
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+        if (blob && blob.size <= maxBytes) return blob.arrayBuffer();
+      }
     }
     throw new Error("图片转换后仍超过微信大小限制，请压缩后重试");
   } finally { bitmap.close(); }

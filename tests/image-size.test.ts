@@ -4,7 +4,7 @@ import { readArticleImage } from "../src/image-assets";
 import { WechatDirectClient } from "../src/direct-client";
 import { WechatRelayClient } from "../src/relay-client";
 import { WechatBridgeClient } from "../src/bridge-client";
-import { prepareRelayImage } from "../src/image-upload";
+import { jpegFromImage, prepareRelayImage } from "../src/image-upload";
 import { setRequestUrlHandler } from "./obsidian-stub";
 
 const MiB = 1024 * 1024;
@@ -66,6 +66,19 @@ describe("relay upload boundaries", () => {
     const close = mockEncoder();
     vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation(callback => callback(null));
     await expect(prepareRelayImage("large.bmp", "image/bmp", new ArrayBuffer(21 * MiB))).rejects.toThrow("图片转换后仍超过");
+    expect(close).toHaveBeenCalledOnce();
+  });
+});
+
+
+describe("JPEG compression recovery", () => {
+  it("reduces dimensions if quality changes alone cannot meet the upload budget", async () => {
+    const close = mockEncoder();
+    vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation(function (this: HTMLCanvasElement, callback) {
+      callback(new Blob([new Uint8Array(this.width * this.height > 2_000_000 ? MiB + 1 : 1000)], { type: "image/jpeg" }));
+    });
+    const result = await jpegFromImage(new ArrayBuffer(1), "image/png", MiB);
+    expect(result.byteLength).toBe(1000);
     expect(close).toHaveBeenCalledOnce();
   });
 });

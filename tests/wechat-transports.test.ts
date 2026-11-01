@@ -101,7 +101,7 @@ describe("invited relay", () => {
   });
 
   it.each([
-    [40164, "API 白名单"], [40125, "AppID 或 AppSecret 无效"], [48001, "接口的权限"],
+    [40164, "API 白名单"], [40125, "AppID 或 AppSecret 无效"], [48001, "接口的权限"], [45001, "请压缩图片后重试"],
   ])("preserves the specific WeChat error %s from the relay", async (errcode, expected) => {
     setRequestUrlHandler(async () => ({ status: 502, json: { error: `WeChat rejected request errcode=${errcode}` } }));
     const client = new WechatRelayClient({ id: "relay:1", name: "我的号" }, "wx-test", "secret-value", "qiaomu", "https://relay.example.com");
@@ -169,5 +169,14 @@ describe("invited relay", () => {
     expect(await client.getDraft("relay:1", "draft-1")).toEqual({ title: "旧标题" });
     expect((await client.updateDraft("draft-1", { account_id: "relay:1", title: "新标题", content_html: "<p>正文</p>", thumb_media_id: "cover", publish_now: false })).media_id).toBe("draft-1");
     expect(paths).not.toContain("/cgi-bin/freepublish/submit");
+  });
+});
+
+
+describe("image size proxy errors", () => {
+  it("explains an HTML 413 proxy response", async () => {
+    setRequestUrlHandler(async () => ({ status: 413, get json() { throw new SyntaxError("HTML body"); } }));
+    const client = new WechatRelayClient({ id: "relay:1", name: "测试" }, "wx-test", "secret-value", "invite", "https://relay.example.com");
+    await expect(client.uploadImage("relay:1", "content", "image.png", "image/png", new ArrayBuffer(10))).rejects.toThrow("图片或请求内容超过中转服务器上限");
   });
 });

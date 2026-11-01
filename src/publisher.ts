@@ -84,6 +84,11 @@ export function preflight(meta: DraftMeta, html: string, hasCover: boolean, warn
 
 export interface PublishProgress { (message: string): void; }
 
+async function uploadDraftImage(client: WechatTransport, accountId: string, kind: "content" | "cover", name: string, type: string, data: ArrayBuffer): ReturnType<WechatTransport["uploadImage"]> {
+  try { return await client.uploadImage(accountId, kind, name, type, data); }
+  catch (error) { throw new Error(`${kind === "cover" ? "封面" : "正文图片"}「${name}」上传失败：${error instanceof Error ? error.message : String(error)}`, { cause: error }); }
+}
+
 /** Uploads local/generated images, then creates a draft. Never publishes directly. */
 export async function publishDraft(options: {
   app: App;
@@ -116,7 +121,7 @@ export async function publishDraft(options: {
     if (previous) { sources.set(image.id, previous); continue; }
     onProgress?.(`上传图片 ${index + 1}/${uploadable.length}：${image.name}`);
     const bytes = await readArticleImage(app, image);
-    const result = await client.uploadImage(meta.accountId, "content", bytes.name, bytes.type, bytes.data);
+    const result = await uploadDraftImage(client, meta.accountId, "content", bytes.name, bytes.type, bytes.data);
     if (!result.url) throw new Error(`图片上传没有返回地址：${image.name}`);
     sources.set(image.id, result.url);
     uploaded.set(key, result.url);
@@ -127,14 +132,14 @@ export async function publishDraft(options: {
   let coverUrl = "";
   if (options.coverImage) {
     onProgress?.("上传封面");
-    const result = await client.uploadImage(meta.accountId, "cover", options.coverImage.name, options.coverImage.mime, options.coverImage.data);
+    const result = await uploadDraftImage(client, meta.accountId, "cover", options.coverImage.name, options.coverImage.mime, options.coverImage.data);
     if (!result.media_id) throw new Error("封面上传没有返回 media_id");
     thumbMediaId = result.media_id;
   } else if (!cover) {
     onProgress?.("生成标题封面");
     const data = await renderTitleCover(meta.coverText || meta.title, coverStyle, () => usesBundledFont(coverFont(coverStyle.font).stack) ? ensureBundledFont() : Promise.resolve());
     if (options.signal?.aborted) throw new Error("已取消");
-    const result = await client.uploadImage(meta.accountId, "cover", "title-cover.jpg", "image/jpeg", data);
+    const result = await uploadDraftImage(client, meta.accountId, "cover", "title-cover.jpg", "image/jpeg", data);
     if (!result.media_id) throw new Error("标题封面上传没有返回 media_id");
     thumbMediaId = result.media_id;
   } else if (cover.kind === "url") {
@@ -143,7 +148,7 @@ export async function publishDraft(options: {
     if (options.signal?.aborted) throw new Error("已取消");
     onProgress?.("上传封面");
     const bytes = await readArticleImage(app, cover.image);
-    const result = await client.uploadImage(meta.accountId, "cover", bytes.name, bytes.type, bytes.data);
+    const result = await uploadDraftImage(client, meta.accountId, "cover", bytes.name, bytes.type, bytes.data);
     if (!result.media_id) throw new Error("封面上传没有返回 media_id");
     thumbMediaId = result.media_id;
   }
