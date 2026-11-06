@@ -72,6 +72,8 @@ export class ExternalPublishModal extends Modal {
   private weiboTopicsEdited = false;
   private weiboImageIds: string[] = [];
   private weiboCopyAdopted = false;
+  /** Text the person selected in the editor before opening the window; used as the default Weibo body. */
+  private readonly weiboSelection: string;
   /** Cards taken out of this post, by position and content size so a re-layout that changes nothing keeps them out. */
   private excluded = new Set<string>();
   private preview!: ExternalPreview;
@@ -106,6 +108,7 @@ export class ExternalPublishModal extends Modal {
     const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter ?? {};
     const own = target === "xhs" ? frontmatter.xhs_title ?? frontmatter["小红书标题"] : undefined;
     this.articleTitle = typeof own === "string" && own.trim() ? own.trim() : defaultPublishTitle(frontmatter, file.basename);
+    this.weiboSelection = app.workspace.activeEditor?.editor?.getSelection() ?? "";
   }
 
   override onOpen(): void {
@@ -124,11 +127,13 @@ export class ExternalPublishModal extends Modal {
     const form = left.createDiv({ cls: "qiaomu-wechat-form" });
     this.formEl = form;
 
-    new Setting(form).setName("标题").addText((text) => {
-      this.titleInput = text.inputEl;
-      text.setValue(this.articleTitle).onChange((value) => { this.articleTitle = value.trim(); this.refreshTitleHint(); this.cover?.syncTitle(); this.schedule(this.target === "xhs" ? 500 : 150); });
-      text.inputEl.addClass("qiaomu-wechat-wide");
-    });
+    if (this.target !== "weibo") {
+      new Setting(form).setName("标题").addText((text) => {
+        this.titleInput = text.inputEl;
+        text.setValue(this.articleTitle).onChange((value) => { this.articleTitle = value.trim(); this.refreshTitleHint(); this.cover?.syncTitle(); this.schedule(this.target === "xhs" ? 500 : 150); });
+        text.inputEl.addClass("qiaomu-wechat-wide");
+      });
+    }
     if (this.target === "xhs") { this.renderCopyFields(form); this.renderCardControls(form); }
     else if (this.target === "weibo") { this.renderWeiboPostFields(form); }
     else { this.renderCover(form); this.renderMarkdown(form); }
@@ -225,7 +230,7 @@ export class ExternalPublishModal extends Modal {
     setName(this.markdownArea, "正文 Markdown");
     this.markdownNote = form.createDiv({ cls: "qiaomu-external-note", text: "改动只用于这次发布，不会写回笔记。" });
     void this.app.vault.cachedRead(this.file).then((raw) => {
-      if (this.markdown === null) this.markdownArea.value = raw.replace(/^---\r?\n[\s\S]*?\r?\n(?:---|\.\.\.)\s*(?:\r?\n|$)/, "").replace(/^\s+/, "");
+      if (this.markdown === null) this.markdownArea.value = this.stripMarkdownImages(raw.replace(/^---\r?\n[\s\S]*?\r?\n(?:---|\.\.\.)\s*(?:\r?\n|$)/, "").replace(/^\s+/, ""));
     });
     this.markdownArea.addEventListener("input", () => {
       this.markdown = this.markdownArea.value;
@@ -238,7 +243,7 @@ export class ExternalPublishModal extends Modal {
     reset.addEventListener("click", () => {
       this.markdown = null;
       reset.addClass("is-empty");
-      void this.app.vault.cachedRead(this.file).then((raw) => { this.markdownArea.value = raw.replace(/^---\r?\n[\s\S]*?\r?\n(?:---|\.\.\.)\s*(?:\r?\n|$)/, "").replace(/^\s+/, ""); });
+      void this.app.vault.cachedRead(this.file).then((raw) => { this.markdownArea.value = this.stripMarkdownImages(raw.replace(/^---\r?\n[\s\S]*?\r?\n(?:---|\.\.\.)\s*(?:\r?\n|$)/, "").replace(/^\s+/, "")); });
       this.discardBase();
       this.schedule(0);
     });
@@ -525,16 +530,55 @@ export class ExternalPublishModal extends Modal {
   private adoptWeiboPostCopy(base: PreparedBase): void {
     const defaults = weiboDefaults(base);
     if (!this.weiboTopicsEdited) { this.weiboTopics = defaults.topics; this.renderWeiboTopics(); }
+    const rawSelection = this.weiboSelection.trim();
     if (!this.weiboTextEdited) {
-      this.weiboText = defaults.text;
-      this.textArea.value = defaults.text;
-      const over = weiboPostBodyLength(defaults.text, this.weiboTopics) > WEIBO_POST_TEXT_MAX;
-      this.enforceWeiboPostLimit(over && !this.weiboCopyAdopted ? `笔记正文 ${weiboPostBodyLength(defaults.text, this.weiboTopics)} 字，已自动截取到 ${WEIBO_POST_TEXT_MAX} 字以内，可以继续修改。` : undefined);
+      const selection = ExternalPublishModal.stripImageMarkup(rawSelection);
+      const body = selection || defaults.text;
+      this.weiboText = body;
+      this.textArea.value = body;
+      const over = weiboPostBodyLength(body, this.weiboTopics) > WEIBO_POST_TEXT_MAX;
+      this.enforceWeiboPostLimit(over && !this.weiboCopyAdopted ? `${rawSelection ? "选中内容" : "笔记正文"} ${weiboPostBodyLength(body, this.weiboTopics)} 字，已自动截取到 ${WEIBO_POST_TEXT_MAX} 字以内，可以继续修改。` : undefined);
     } else this.refreshWeiboPostCounter();
     if (!this.weiboCopyAdopted) {
-      this.weiboImageIds = base.note.images.slice(0, WEIBO_POST_IMAGES_MAX).map((image) => image.id);
+      const selectedIds = rawSelection ? ExternalPublishModal.extractImageIds(rawSelection, base) : [];
+      this.weiboImageIds = selectedIds.length ? selectedIds : base.note.images.slice(0, WEIBO_POST_IMAGES_MAX).map((image) => image.id);
     }
     this.weiboCopyAdopted = true;
+  }
+
+  /** Removes Obsidian wiki embeds (`![[...]]`), Markdown images and `<img>` tags from selected text so they don't leak into the post body. */
+  private static stripImageMarkup(text: string): string {
+    return text
+      .replace(/!\[\[[^\]]+\]\]/g, "")
+      .replace(/!\[[^\]]*\]\([^)]+\)/g, "")
+      .replace(/<img\b[^>]*>/gi, "")
+      .replace(/[ \t]+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
+  /** For the Weibo headline-article window, strip image markers from the editable body so `![[...]]` does not show up. */
+  private stripMarkdownImages(text: string): string {
+    return this.target === "weibo-article" ? ExternalPublishModal.stripImageMarkup(text) : text;
+  }
+
+  /** Finds the note image ids whose file names appear in the selected text (so selected pictures become the post's pictures). */
+  private static extractImageIds(selection: string, base: PreparedBase): string[] {
+    const names = new Set<string>();
+    const wiki = /!\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g;
+    const md = /!\[[^\]]*\]\(([^)]+)\)/g;
+    let m: RegExpExecArray | null;
+    while ((m = wiki.exec(selection))) names.add((m[1] ?? "").trim());
+    while ((m = md.exec(selection))) names.add((m[1] ?? "").trim());
+    const ids: string[] = [];
+    for (const image of base.note.images) {
+      const baseName = image.name.split(/[\\/]/).pop() ?? image.name;
+      for (const name of names) {
+        if ((name.split(/[\\/]/).pop() ?? name) === baseName) { ids.push(image.id); break; }
+      }
+      if (ids.length >= WEIBO_POST_IMAGES_MAX) break;
+    }
+    return ids;
   }
 
   private includedCards(): CardEntry[] { return this.entries.filter((entry) => !this.excluded.has(entry.key)); }
@@ -617,7 +661,7 @@ export class ExternalPublishModal extends Modal {
     this.publishButton.disabled = blocked || this.busy || !bridgeAvailable();
     this.publishButton.setText(this.target === "xhs" ? "填入编辑器" : this.target === "weibo" ? "填入发布框" : "发到草稿");
     this.stopButton.setText(this.busy ? "停止" : "取消");
-    this.titleInput.toggleAttribute("disabled", this.busy);
+    this.titleInput?.toggleAttribute("disabled", this.busy);
     this.formEl.inert = this.busy;
   }
 
