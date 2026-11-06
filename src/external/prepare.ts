@@ -5,7 +5,7 @@ import { assertImageSources, imageKey } from "../image-assets";
 import { BRIDGE_VERSION, type BridgeJob, type PublishTargetId } from "../bridge/protocol";
 import { AssetBag, type ImageCache, imageCacheKey, loadArticleImage, normalizeImage } from "./assets";
 import type { CoverCandidate, CoverSource } from "../cover/source";
-import { checkX, checkZhihu, IMAGE_LIMITS, normalizeTopics, type ExternalCheck } from "./limits";
+import { checkWeibo, checkX, checkZhihu, IMAGE_LIMITS, normalizeTopics, type ExternalCheck } from "./limits";
 import { layoutXhsCards, renderCardBlobs } from "./xhs-cards";
 import type { CardLayout } from "./card-layout";
 import type { ExternalPublishSettings } from "../types";
@@ -210,6 +210,11 @@ export function buildJob(base: PreparedBase, title: string): PreparedPublish {
     job.content.summary = frontmatterString(note.frontmatter, "digest", "摘要", "description", "summary") || undefined;
     job.content.cover = base.coverId ?? undefined;
     checks.push(...checkZhihu({ title }));
+  } else if (target === "weibo") {
+    job.content.html = base.previewHtml.replaceAll(PREVIEW_IMAGE_SCHEME, ZHIHU_IMAGE_SCHEME);
+    job.content.summary = frontmatterString(note.frontmatter, "digest", "摘要", "description", "summary") || undefined;
+    job.content.cover = base.coverId ?? undefined;
+    checks.push(...checkWeibo({ title, summary: job.content.summary }));
   }
   for (const message of base.warnings) checks.push({ level: "warning", message, fix: "" });
   return { job, assets: base.assets, checks, warnings: base.warnings, previewHtml: base.previewHtml };

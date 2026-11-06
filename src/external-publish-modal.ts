@@ -14,18 +14,20 @@ import type { CoverResult } from "./cover/cover-picker";
 import { renderCardControls } from "./external-card-controls";
 import { ExternalPreview } from "./external-preview";
 import { CARD_WIDTH } from "./external/card-styles";
-import { checkXhs, normalizeTopics, truncateText, XHS_TEXT_MAX, XHS_TITLE_MAX, xhsBodyLength, xhsTextBudget, ZHIHU_TITLE_MAX, textLength, type ExternalCheck } from "./external/limits";
+import { checkXhs, normalizeTopics, truncateText, WEIBO_TITLE_MAX, XHS_TEXT_MAX, XHS_TITLE_MAX, xhsBodyLength, xhsTextBudget, ZHIHU_TITLE_MAX, textLength, type ExternalCheck } from "./external/limits";
 
 const INTRO: Record<PublishTargetId, string> = {
   x: "写进 X 文章编辑器，只存为草稿，由你在 X 里检查后再发布。需要 X Premium。",
   zhihu: "写进知乎文章草稿，由你在知乎里检查后再发布。",
   xhs: "把笔记排成 3:4 图文卡片，预填到小红书创作平台，由你检查后再发布。",
+  weibo: "写成微博头条文章草稿，由你在微博里检查后再发布。标题最多 32 字。",
 };
 
 const RECORD_KEYS: Record<PublishTargetId, { url: string; at: string }> = {
   x: { url: "x_draft_url", at: "x_draft_at" },
   zhihu: { url: "zhihu_draft_url", at: "zhihu_draft_at" },
   xhs: { url: "xhs_editor_url", at: "xhs_prefilled_at" },
+  weibo: { url: "weibo_draft_url", at: "weibo_draft_at" },
 };
 
 const THUMB_WIDTH = 96;
@@ -163,14 +165,14 @@ export class ExternalPublishModal extends Modal {
   // ---------- cover (X and Zhihu) ----------
 
   private renderCover(form: HTMLElement): void {
-    const spec = COVER_SPECS[this.target === "x" ? "x" : "zhihu"];
+    const spec = COVER_SPECS[this.target === "x" ? "x" : this.target === "zhihu" ? "zhihu" : "weibo"];
     this.cover = new CoverSection(form, {
       app: this.app, spec, title: () => this.articleTitle,
       candidates: () => (this.base ? noteImageCandidates(this.app, this.base.note) : []),
       initial: async () => {
         const base = this.base;
         if (!base) return null;
-        return (await frontmatterCoverSource(this.app, this.file, base.note)) ?? (this.target === "zhihu" ? await firstImageSource(this.app, base.note) : null);
+        return (await frontmatterCoverSource(this.app, this.file, base.note)) ?? ((this.target === "zhihu" || this.target === "weibo") ? await firstImageSource(this.app, base.note) : null);
       },
       allowNone: true,
       fallbackMode: "none",
@@ -320,7 +322,7 @@ export class ExternalPublishModal extends Modal {
   }
 
   private refreshTitleHint(): void {
-    const limit = this.target === "xhs" ? XHS_TITLE_MAX : this.target === "zhihu" ? ZHIHU_TITLE_MAX : 0;
+    const limit = this.target === "xhs" ? XHS_TITLE_MAX : this.target === "zhihu" ? ZHIHU_TITLE_MAX : this.target === "weibo" ? WEIBO_TITLE_MAX : 0;
     if (!limit) return;
     const used = textLength(this.articleTitle);
     this.titleInput.toggleClass("is-over", used > limit);

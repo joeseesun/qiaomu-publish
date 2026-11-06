@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkX, checkXhs, normalizeTopics, xhsBodyLength } from "../src/external/limits";
+import { checkWeibo, checkX, checkXhs, normalizeTopics, xhsBodyLength } from "../src/external/limits";
 
 describe("platform limits", () => {
   it("counts topics inside the Xiaohongshu body limit", () => {
@@ -47,5 +47,37 @@ describe("Xiaohongshu copy limit", () => {
 
   it("needs at least one card", () => {
     expect(checkXhs({ title: "标题", text: "正文", topics: [], cards: 0 }).some((check) => check.level === "error")).toBe(true);
+  });
+});
+
+describe("Weibo headline article limits", () => {
+  it("passes a short title and no summary", () => {
+    expect(checkWeibo({ title: "短标题" })).toEqual([]);
+  });
+
+  it("blocks a missing title", () => {
+    expect(checkWeibo({ title: "" })[0]?.level).toBe("error");
+  });
+
+  it("blocks a title over 32 characters", () => {
+    const long = "字".repeat(33);
+    expect(checkWeibo({ title: long })[0]?.level).toBe("error");
+  });
+
+  it("accepts a title exactly 32 characters", () => {
+    expect(checkWeibo({ title: "字".repeat(32) })).toEqual([]);
+  });
+
+  it("blocks a summary over 44 characters", () => {
+    const long = "字".repeat(45);
+    expect(checkWeibo({ title: "标题", summary: long })[0]?.level).toBe("error");
+  });
+
+  it("accepts a summary exactly 44 characters", () => {
+    expect(checkWeibo({ title: "标题", summary: "字".repeat(44) })).toEqual([]);
+  });
+
+  it("skips summary check when summary is absent", () => {
+    expect(checkWeibo({ title: "标题" })).toEqual([]);
   });
 });

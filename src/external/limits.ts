@@ -4,6 +4,9 @@ export const XHS_TITLE_MAX = 20;
 export const XHS_TEXT_MAX = 1000;
 export const XHS_IMAGES_MAX = 18;
 export const ZHIHU_TITLE_MAX = 100;
+/** Weibo headline article limits: title ≤ 32, summary ≤ 44 (enforced by the draft API). */
+export const WEIBO_TITLE_MAX = 32;
+export const WEIBO_SUMMARY_MAX = 44;
 /** X Articles get unreliable past this many pictures, tables and charts; the Clipper engine enforces the same ceiling. */
 export const X_MEDIA_SOFT_LIMIT = 25;
 
@@ -11,6 +14,7 @@ export const IMAGE_LIMITS: Record<PublishTargetId, { maxBytes: number; maxEdge: 
   x: { maxBytes: 15 * 1024 * 1024, maxEdge: 4096 },
   zhihu: { maxBytes: 20 * 1024 * 1024, maxEdge: 4096 },
   xhs: { maxBytes: 8 * 1024 * 1024, maxEdge: 4096 },
+  weibo: { maxBytes: 20 * 1024 * 1024, maxEdge: 4096 },
 };
 
 export interface ExternalCheck { level: "error" | "warning" | "info"; message: string; fix: string }
@@ -69,6 +73,18 @@ export function checkZhihu(input: { title: string }): ExternalCheck[] {
   if (!title) return [{ level: "error", message: "还没有标题", fix: "在上面填写标题" }];
   if (title > ZHIHU_TITLE_MAX) return [{ level: "error", message: `标题 ${title} 字，知乎最多 ${ZHIHU_TITLE_MAX} 字`, fix: "缩短标题" }];
   return [];
+}
+
+export function checkWeibo(input: { title: string; summary?: string }): ExternalCheck[] {
+  const checks: ExternalCheck[] = [];
+  const title = textLength(input.title.trim());
+  if (!title) checks.push({ level: "error", message: "还没有标题", fix: "在上面填写标题" });
+  else if (title > WEIBO_TITLE_MAX) checks.push({ level: "error", message: `标题 ${title} 字，微博头条文章最多 ${WEIBO_TITLE_MAX} 字`, fix: "缩短标题" });
+  if (input.summary !== undefined) {
+    const summary = textLength(input.summary.trim());
+    if (summary > WEIBO_SUMMARY_MAX) checks.push({ level: "error", message: `摘要 ${summary} 字，微博头条文章最多 ${WEIBO_SUMMARY_MAX} 字`, fix: "在笔记属性 digest/摘要里缩短，或留空" });
+  }
+  return checks;
 }
 
 export function checkX(input: { title: string; media: number }): ExternalCheck[] {

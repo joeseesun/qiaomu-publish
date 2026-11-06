@@ -28,6 +28,7 @@ const ARTICLE_CSS = `
 .page { box-sizing: border-box; padding: 0 0 28px; background: #fff; color: var(--ink); font: 15px/1.7 -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
 .page.x { --ink: #0f1419; --muted: #536471; --line: #eff3f4; }
 .page.zhihu { --ink: #121212; --muted: #8590a6; --line: #ebebeb; }
+.page.weibo { --ink: #1a1a1a; --muted: #808080; --line: #ececec; }
 .cover { display: block; width: 100%; aspect-ratio: 2 / 1; object-fit: cover; background: var(--line); }
 .head { padding: 18px 18px 0; }
 h1.title { margin: 0 0 12px; font-size: 24px; line-height: 1.3; font-weight: 800; letter-spacing: 0; }
