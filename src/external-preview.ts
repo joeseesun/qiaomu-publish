@@ -23,12 +23,21 @@ export interface XhsPreview {
   cards: readonly HTMLElement[];
 }
 
+export interface WeiboPostPreview {
+  author: string;
+  text: string;
+  topics: readonly string[];
+  /** Selected image asset ids, in order. */
+  imageIds: readonly string[];
+  urls: ReadonlyMap<string, string>;
+}
+
 const ARTICLE_CSS = `
 :host { display: block; }
 .page { box-sizing: border-box; padding: 0 0 28px; background: #fff; color: var(--ink); font: 15px/1.7 -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
 .page.x { --ink: #0f1419; --muted: #536471; --line: #eff3f4; }
 .page.zhihu { --ink: #121212; --muted: #8590a6; --line: #ebebeb; }
-.page.weibo { --ink: #1a1a1a; --muted: #808080; --line: #ececec; }
+.page.weibo-article { --ink: #1a1a1a; --muted: #808080; --line: #ececec; }
 .cover { display: block; width: 100%; aspect-ratio: 2 / 1; object-fit: cover; background: var(--line); }
 .head { padding: 18px 18px 0; }
 h1.title { margin: 0 0 12px; font-size: 24px; line-height: 1.3; font-weight: 800; letter-spacing: 0; }
@@ -57,7 +66,7 @@ export class ExternalPreview {
   private shadow: ShadowRoot | null = null;
   private observer: ResizeObserver | null = null;
   private index = 0;
-  private last: XhsPreview | null = null;
+  private last: XhsPreview | WeiboPostPreview | null = null;
 
   constructor(parent: HTMLElement, private readonly target: PublishTargetId) {
     this.el = parent.createDiv({ cls: "qiaomu-wechat-phone" });
@@ -134,7 +143,7 @@ export class ExternalPreview {
           const button = stage.createEl("button", { cls: `qiaomu-ext-xhs-nav is-${side}`, attr: { type: "button" } });
           setIcon(button.createSpan({ attr: { "aria-hidden": "true" } }), icon);
           button.createSpan({ cls: "qiaomu-wechat-sr-only", text: side === "prev" ? "上一张" : "下一张" });
-          button.addEventListener("click", () => { this.index = (this.index + step + count) % count; if (this.last) this.showXhs(this.last); });
+          button.addEventListener("click", () => { this.index = (this.index + step + count) % count; this.showXhs(preview); });
         }
         stage.createDiv({ cls: "qiaomu-ext-xhs-count", text: `${this.index + 1}/${count}` });
       }
@@ -156,6 +165,30 @@ export class ExternalPreview {
 
   /** Back to the first card, e.g. after the layout changed. */
   resetCard(): void { this.index = 0; }
+
+  /** Regular Weibo post: author, body text, `#话题#` topics, and up to 9 images. */
+  showWeiboPost(preview: WeiboPostPreview): void {
+    this.last = preview;
+    const top = this.scroll.scrollTop;
+    this.reset();
+    const root = this.scroll.createDiv({ cls: "qiaomu-weibo-post" });
+    const head = root.createDiv({ cls: "qiaomu-weibo-post-head" });
+    head.createDiv({ cls: "qiaomu-weibo-post-avatar" });
+    head.createSpan({ cls: "qiaomu-weibo-post-author", text: preview.author || "作者" });
+    root.createDiv({ cls: "qiaomu-weibo-post-text", text: preview.text.trim() || "（还没有正文）" });
+    if (preview.topics.length) {
+      const topics = root.createDiv({ cls: "qiaomu-weibo-post-topics" });
+      for (const topic of preview.topics) topics.createSpan({ text: `#${topic}#` });
+    }
+    if (preview.imageIds.length) {
+      const grid = root.createDiv({ cls: "qiaomu-weibo-post-grid" });
+      for (const id of preview.imageIds) {
+        const url = preview.urls.get(id);
+        if (url) grid.createEl("img", { attr: { src: url, loading: "lazy" } });
+      }
+    }
+    this.scroll.scrollTop = top;
+  }
 
   destroy(): void { this.observer?.disconnect(); this.observer = null; }
 }

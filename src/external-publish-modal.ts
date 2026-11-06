@@ -6,7 +6,7 @@ import { renderPlatformSwitch } from "./platform-switch";
 import { bridgeAvailable } from "./bridge/server";
 import { startBridgeRun, type BridgeRun } from "./bridge/session";
 import { TARGET_LABEL, type BridgeJob, type BridgeStatus, type PublishTargetId } from "./bridge/protocol";
-import { applyCover, buildJob, buildXhsJob, defaultPublishTitle, firstImageSource, frontmatterCoverSource, layoutXhs, noteImageCandidates, prepareBase, xhsDefaults, type PreparedBase, type PreparedPublish, type XhsLayout } from "./external/prepare";
+import { applyCover, buildJob, buildWeiboPostJob, buildXhsJob, defaultPublishTitle, firstImageSource, frontmatterCoverSource, layoutXhs, noteImageCandidates, prepareBase, weiboDefaults, xhsDefaults, type PreparedBase, type PreparedPublish, type XhsLayout } from "./external/prepare";
 import type { AssetBag, ImageCache } from "./external/assets";
 import { CoverSection } from "./cover/cover-section";
 import { COVER_SPECS } from "./cover/spec";
@@ -14,20 +14,22 @@ import type { CoverResult } from "./cover/cover-picker";
 import { renderCardControls } from "./external-card-controls";
 import { ExternalPreview } from "./external-preview";
 import { CARD_WIDTH } from "./external/card-styles";
-import { checkXhs, normalizeTopics, truncateText, WEIBO_TITLE_MAX, XHS_TEXT_MAX, XHS_TITLE_MAX, xhsBodyLength, xhsTextBudget, ZHIHU_TITLE_MAX, textLength, type ExternalCheck } from "./external/limits";
+import { checkWeiboPost, checkXhs, normalizeTopics, truncateText, WEIBO_ARTICLE_TITLE_MAX, WEIBO_POST_IMAGES_MAX, WEIBO_POST_TEXT_MAX, weiboPostBodyLength, XHS_TEXT_MAX, XHS_TITLE_MAX, xhsBodyLength, xhsTextBudget, ZHIHU_TITLE_MAX, textLength, type ExternalCheck } from "./external/limits";
 
 const INTRO: Record<PublishTargetId, string> = {
   x: "写进 X 文章编辑器，只存为草稿，由你在 X 里检查后再发布。需要 X Premium。",
   zhihu: "写进知乎文章草稿，由你在知乎里检查后再发布。",
   xhs: "把笔记排成 3:4 图文卡片，预填到小红书创作平台，由你检查后再发布。",
-  weibo: "写成微博头条文章草稿，由你在微博里检查后再发布。标题最多 32 字。",
+  weibo: "写成普通微博（正文 + 话题 + 图片），预填到微博发布框，由你检查后再发布。",
+  "weibo-article": "写成微博长文草稿，由你在微博里检查后再发布。标题最多 32 字。",
 };
 
 const RECORD_KEYS: Record<PublishTargetId, { url: string; at: string }> = {
   x: { url: "x_draft_url", at: "x_draft_at" },
   zhihu: { url: "zhihu_draft_url", at: "zhihu_draft_at" },
   xhs: { url: "xhs_editor_url", at: "xhs_prefilled_at" },
-  weibo: { url: "weibo_draft_url", at: "weibo_draft_at" },
+  weibo: { url: "weibo_post_url", at: "weibo_post_at" },
+  "weibo-article": { url: "weibo_draft_url", at: "weibo_draft_at" },
 };
 
 const THUMB_WIDTH = 96;
@@ -63,6 +65,13 @@ export class ExternalPublishModal extends Modal {
   private textEdited = false;
   private topicsEdited = false;
   private copyAdopted = false;
+  /** Weibo post copy the person can edit. */
+  private weiboText = "";
+  private weiboTopics: string[] = [];
+  private weiboTextEdited = false;
+  private weiboTopicsEdited = false;
+  private weiboImageIds: string[] = [];
+  private weiboCopyAdopted = false;
   /** Cards taken out of this post, by position and content size so a re-layout that changes nothing keeps them out. */
   private excluded = new Set<string>();
   private preview!: ExternalPreview;
@@ -83,6 +92,7 @@ export class ExternalPublishModal extends Modal {
   private copyNote!: HTMLElement;
   private topicsEl!: HTMLElement;
   private cardsEl!: HTMLElement;
+  private imagesEl!: HTMLElement;
   private checksEl!: HTMLElement;
   private statusEl!: HTMLElement;
   private actionsEl!: HTMLElement;
@@ -120,6 +130,7 @@ export class ExternalPublishModal extends Modal {
       text.inputEl.addClass("qiaomu-wechat-wide");
     });
     if (this.target === "xhs") { this.renderCopyFields(form); this.renderCardControls(form); }
+    else if (this.target === "weibo") { this.renderWeiboPostFields(form); }
     else { this.renderCover(form); this.renderMarkdown(form); }
     this.cardsEl = form.createDiv({ cls: "qiaomu-external-cards is-empty" });
     this.checksEl = form.createEl("ul", { cls: "qiaomu-wechat-checks" });
@@ -132,7 +143,7 @@ export class ExternalPublishModal extends Modal {
     this.actionsEl = footer.createDiv({ cls: "qiaomu-wechat-actions" });
     this.stopButton = this.actionsEl.createEl("button", { text: "取消" });
     this.stopButton.addEventListener("click", () => this.onStop());
-    this.publishButton = this.actionsEl.createEl("button", { text: this.target === "xhs" ? "填入编辑器" : "发到草稿", cls: "mod-cta" });
+    this.publishButton = this.actionsEl.createEl("button", { text: this.target === "xhs" ? "填入编辑器" : this.target === "weibo" ? "填入发布框" : "发到草稿", cls: "mod-cta" });
     this.publishButton.addEventListener("click", () => void this.publish());
     this.publishButton.disabled = true;
 
@@ -165,14 +176,14 @@ export class ExternalPublishModal extends Modal {
   // ---------- cover (X and Zhihu) ----------
 
   private renderCover(form: HTMLElement): void {
-    const spec = COVER_SPECS[this.target === "x" ? "x" : this.target === "zhihu" ? "zhihu" : "weibo"];
+    const spec = COVER_SPECS[this.target === "x" ? "x" : this.target === "zhihu" ? "zhihu" : "weibo-article"];
     this.cover = new CoverSection(form, {
       app: this.app, spec, title: () => this.articleTitle,
       candidates: () => (this.base ? noteImageCandidates(this.app, this.base.note) : []),
       initial: async () => {
         const base = this.base;
         if (!base) return null;
-        return (await frontmatterCoverSource(this.app, this.file, base.note)) ?? ((this.target === "zhihu" || this.target === "weibo") ? await firstImageSource(this.app, base.note) : null);
+        return (await frontmatterCoverSource(this.app, this.file, base.note)) ?? ((this.target === "zhihu" || this.target === "weibo-article") ? await firstImageSource(this.app, base.note) : null);
       },
       allowNone: true,
       fallbackMode: "none",
@@ -308,6 +319,104 @@ export class ExternalPublishModal extends Modal {
     });
   }
 
+  // ---------- Weibo post: body, topics (#话题#), image grid ----------
+
+  private renderWeiboPostFields(form: HTMLElement): void {
+    const setting = new Setting(form).setName("正文");
+    this.counterEl = setting.descEl;
+    this.textArea = form.createEl("textarea", { cls: "qiaomu-external-text", attr: { rows: "8", placeholder: "想说点什么；留空则只发图片" } });
+    setName(this.textArea, "微博正文");
+    this.textArea.addEventListener("input", () => {
+      this.weiboText = this.textArea.value;
+      this.weiboTextEdited = true;
+      this.enforceWeiboPostLimit();
+      this.refreshChecks();
+      this.schedulePhone();
+    });
+    this.copyNote = form.createDiv({ cls: "qiaomu-external-note is-empty" });
+    this.topicsEl = form.createDiv({ cls: "qiaomu-external-topics" });
+    this.renderWeiboTopics();
+    this.imagesEl = form.createDiv({ cls: "qiaomu-weibo-images" });
+    this.renderWeiboImages();
+  }
+
+  private enforceWeiboPostLimit(source?: string): void {
+    const budget = WEIBO_POST_TEXT_MAX - this.weiboTopics.reduce((sum, topic) => sum + textLength(topic) + 2, 0);
+    const result = truncateText(this.weiboText, Math.max(0, budget));
+    if (result.truncated) {
+      this.weiboText = result.text;
+      this.textArea.value = result.text;
+      this.copyNote.setText(source ?? `超出 ${WEIBO_POST_TEXT_MAX} 字（含话题），已自动截取。`);
+      this.copyNote.removeClass("is-empty");
+    } else if (!source) this.copyNote.addClass("is-empty");
+    this.refreshWeiboPostCounter();
+  }
+
+  private refreshWeiboPostCounter(): void {
+    const used = weiboPostBodyLength(this.weiboText, this.weiboTopics);
+    this.counterEl.setText(`${used} / ${WEIBO_POST_TEXT_MAX}（含话题）`);
+    this.counterEl.toggleClass("is-over", used > WEIBO_POST_TEXT_MAX);
+  }
+
+  private renderWeiboTopics(): void {
+    this.topicsEl.empty();
+    for (const topic of this.weiboTopics) {
+      const chip = this.topicsEl.createDiv({ cls: "qiaomu-external-topic" });
+      chip.createSpan({ text: `#${topic}#` });
+      const remove = chip.createEl("button", { cls: "qiaomu-external-topic-remove", attr: { type: "button" } });
+      setIcon(remove.createSpan({ attr: { "aria-hidden": "true" } }), "x");
+      remove.createSpan({ cls: "qiaomu-wechat-sr-only", text: `删除话题 ${topic}` });
+      remove.addEventListener("click", () => { this.weiboTopics = this.weiboTopics.filter((item) => item !== topic); this.weiboTopicsEdited = true; this.renderWeiboTopics(); this.refreshWeiboPostCounter(); this.refreshChecks(); this.schedulePhone(); });
+    }
+    const input = this.topicsEl.createEl("input", { cls: "qiaomu-external-topic-input", attr: { type: "text", placeholder: "添加话题，回车确认" } });
+    setName(input, "添加话题");
+    input.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" || event.isComposing) return;
+      event.preventDefault();
+      const added = normalizeTopics([...this.weiboTopics, input.value], 10);
+      if (added.length === this.weiboTopics.length) { input.value = ""; return; }
+      this.weiboTopics = added;
+      this.weiboTopicsEdited = true;
+      this.enforceWeiboPostLimit();
+      this.renderWeiboTopics();
+      this.refreshChecks();
+      this.schedulePhone();
+      this.topicsEl.querySelector<HTMLInputElement>(".qiaomu-external-topic-input")?.focus();
+    });
+  }
+
+  /** Thumbnails of every picture in the note; clicking toggles whether it goes into the post (≤9). */
+  private renderWeiboImages(): void {
+    this.imagesEl.empty();
+    const note = this.base?.note;
+    if (!note || !note.images.length) {
+      this.imagesEl.createDiv({ cls: "qiaomu-weibo-images-empty", text: "这篇笔记没有图片" });
+      return;
+    }
+    const head = this.imagesEl.createDiv({ cls: "qiaomu-weibo-images-head" });
+    head.createSpan({ text: `配图（已选 ${this.weiboImageIds.length}/${WEIBO_POST_IMAGES_MAX}，点击切换）` });
+    const grid = this.imagesEl.createDiv({ cls: "qiaomu-weibo-images-grid" });
+    for (const image of note.images) {
+      const url = this.assetUrls.get(image.id);
+      if (!url) continue;
+      const selected = this.weiboImageIds.includes(image.id);
+      const figure = grid.createDiv({ cls: `qiaomu-weibo-image${selected ? " is-selected" : ""}` });
+      figure.createEl("img", { attr: { src: url, alt: image.name, loading: "lazy" } });
+      if (selected) figure.createSpan({ cls: "qiaomu-weibo-image-check" });
+      figure.addEventListener("click", () => this.toggleWeiboImage(image.id));
+    }
+  }
+
+  private toggleWeiboImage(id: string): void {
+    const index = this.weiboImageIds.indexOf(id);
+    if (index >= 0) this.weiboImageIds.splice(index, 1);
+    else if (this.weiboImageIds.length < WEIBO_POST_IMAGES_MAX) this.weiboImageIds.push(id);
+    else { new Notice(`微博最多 ${WEIBO_POST_IMAGES_MAX} 张图`); return; }
+    this.renderWeiboImages();
+    this.refreshChecks();
+    this.schedulePhone();
+  }
+
   private renderCardControls(form: HTMLElement): void {
     this.destroyControls = renderCardControls(form, this.card, () => { void this.saveCardChoice(); this.preview.resetCard(); this.schedule(250); });
     new Setting(form).setName("分页").setDesc("--- 单独成行时总是另起一张。").addDropdown((dropdown) => {
@@ -322,7 +431,7 @@ export class ExternalPublishModal extends Modal {
   }
 
   private refreshTitleHint(): void {
-    const limit = this.target === "xhs" ? XHS_TITLE_MAX : this.target === "zhihu" ? ZHIHU_TITLE_MAX : this.target === "weibo" ? WEIBO_TITLE_MAX : 0;
+    const limit = this.target === "xhs" ? XHS_TITLE_MAX : this.target === "zhihu" ? ZHIHU_TITLE_MAX : this.target === "weibo-article" ? WEIBO_ARTICLE_TITLE_MAX : 0;
     if (!limit) return;
     const used = textLength(this.articleTitle);
     this.titleInput.toggleClass("is-over", used > limit);
@@ -374,10 +483,13 @@ export class ExternalPublishModal extends Modal {
         this.adoptXhsCopy(base);
         this.entries = layout.layout.cards.map((card, index) => ({ key: `${index}:${(card.textContent ?? "").length}`, card }));
         this.excluded = new Set([...this.excluded].filter((key) => this.entries.some((entry) => entry.key === key)));
+      } else if (this.target === "weibo") {
+        this.adoptWeiboPostCopy(base);
       } else {
         this.prepared = buildJob(base, this.articleTitle);
       }
       this.renderCards();
+      if (this.target === "weibo") this.renderWeiboImages();
       this.updatePhone();
       this.refreshChecks();
       this.statusEl.setText("");
@@ -407,6 +519,22 @@ export class ExternalPublishModal extends Modal {
       this.enforceLimit(over && !this.copyAdopted ? `笔记正文 ${textLength(defaults.text)} 字，已自动截取到 ${XHS_TEXT_MAX} 字以内，可以继续修改。` : undefined);
     } else this.refreshCounter();
     this.copyAdopted = true;
+  }
+
+  /** The first time (and until the person edits) the weibo copy comes from the note; all images are selected by default (≤9). */
+  private adoptWeiboPostCopy(base: PreparedBase): void {
+    const defaults = weiboDefaults(base);
+    if (!this.weiboTopicsEdited) { this.weiboTopics = defaults.topics; this.renderWeiboTopics(); }
+    if (!this.weiboTextEdited) {
+      this.weiboText = defaults.text;
+      this.textArea.value = defaults.text;
+      const over = weiboPostBodyLength(defaults.text, this.weiboTopics) > WEIBO_POST_TEXT_MAX;
+      this.enforceWeiboPostLimit(over && !this.weiboCopyAdopted ? `笔记正文 ${weiboPostBodyLength(defaults.text, this.weiboTopics)} 字，已自动截取到 ${WEIBO_POST_TEXT_MAX} 字以内，可以继续修改。` : undefined);
+    } else this.refreshWeiboPostCounter();
+    if (!this.weiboCopyAdopted) {
+      this.weiboImageIds = base.note.images.slice(0, WEIBO_POST_IMAGES_MAX).map((image) => image.id);
+    }
+    this.weiboCopyAdopted = true;
   }
 
   private includedCards(): CardEntry[] { return this.entries.filter((entry) => !this.excluded.has(entry.key)); }
@@ -445,6 +573,8 @@ export class ExternalPublishModal extends Modal {
     if (this.target === "xhs") {
       if (!this.xhs) return;
       this.preview.showXhs({ title: this.articleTitle, author, text: this.xhsText, topics: this.xhsTopics, cards: this.includedCards().map((entry) => entry.card) });
+    } else if (this.target === "weibo") {
+      this.preview.showWeiboPost({ author, text: this.weiboText, topics: this.weiboTopics, imageIds: this.weiboImageIds, urls: this.assetUrls });
     } else if (this.prepared && this.base) {
       this.preview.showArticle({ title: this.articleTitle, author, html: this.prepared.previewHtml, urls: this.assetUrls, coverId: this.base.coverId });
     }
@@ -456,6 +586,9 @@ export class ExternalPublishModal extends Modal {
     if (this.target === "xhs") {
       if (!this.xhs) return [];
       return [...checkXhs({ title: this.articleTitle, text: this.xhsText, topics: this.xhsTopics, cards: this.includedCards().length }), ...this.xhs.checks];
+    }
+    if (this.target === "weibo") {
+      return checkWeiboPost({ text: this.weiboText, topics: this.weiboTopics, images: this.weiboImageIds.length });
     }
     return this.prepared?.checks ?? [];
   }
@@ -479,10 +612,10 @@ export class ExternalPublishModal extends Modal {
   }
 
   private refreshButtons(): void {
-    const ready = this.target === "xhs" ? !!this.xhs : !!this.prepared;
+    const ready = this.target === "xhs" ? !!this.xhs : this.target === "weibo" ? !!this.base : !!this.prepared;
     const blocked = !this.base || !ready || this.preparing || this.markdownTimer !== null || this.prepareTimer !== null || this.checks.some((check) => check.level === "error");
     this.publishButton.disabled = blocked || this.busy || !bridgeAvailable();
-    this.publishButton.setText(this.target === "xhs" ? "填入编辑器" : "发到草稿");
+    this.publishButton.setText(this.target === "xhs" ? "填入编辑器" : this.target === "weibo" ? "填入发布框" : "发到草稿");
     this.stopButton.setText(this.busy ? "停止" : "取消");
     this.titleInput.toggleAttribute("disabled", this.busy);
     this.formEl.inert = this.busy;
@@ -513,6 +646,12 @@ export class ExternalPublishModal extends Modal {
   /** The job as it will be sent. Xiaohongshu draws its cards here, the one slow step, with progress. */
   private async finalJob(): Promise<{ job: BridgeJob; assets: AssetBag }> {
     const base = this.base!;
+    if (this.target === "weibo") {
+      const checks = checkWeiboPost({ text: this.weiboText, topics: this.weiboTopics, images: this.weiboImageIds.length });
+      const errors = checks.filter(check => check.level === "error");
+      if (errors.length) throw new Error(errors.map(check => check.message).join("\n"));
+      return buildWeiboPostJob(base, { title: this.articleTitle, text: this.weiboText, topics: this.weiboTopics, imageIds: this.weiboImageIds });
+    }
     if (this.target !== "xhs") {
       if (this.cover) { this.coverResult = await this.cover.result(); applyCover(base, this.coverResult); }
       const prepared = buildJob(base, this.articleTitle);

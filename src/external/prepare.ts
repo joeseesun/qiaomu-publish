@@ -5,7 +5,7 @@ import { assertImageSources, imageKey } from "../image-assets";
 import { BRIDGE_VERSION, type BridgeJob, type PublishTargetId } from "../bridge/protocol";
 import { AssetBag, type ImageCache, imageCacheKey, loadArticleImage, normalizeImage } from "./assets";
 import type { CoverCandidate, CoverSource } from "../cover/source";
-import { checkWeibo, checkX, checkZhihu, IMAGE_LIMITS, normalizeTopics, type ExternalCheck } from "./limits";
+import { checkWeiboArticle, checkX, checkZhihu, IMAGE_LIMITS, normalizeTopics, type ExternalCheck } from "./limits";
 import { layoutXhsCards, renderCardBlobs } from "./xhs-cards";
 import type { CardLayout } from "./card-layout";
 import type { ExternalPublishSettings } from "../types";
@@ -210,11 +210,11 @@ export function buildJob(base: PreparedBase, title: string): PreparedPublish {
     job.content.summary = frontmatterString(note.frontmatter, "digest", "摘要", "description", "summary") || undefined;
     job.content.cover = base.coverId ?? undefined;
     checks.push(...checkZhihu({ title }));
-  } else if (target === "weibo") {
+  } else if (target === "weibo-article") {
     job.content.html = base.previewHtml.replaceAll(PREVIEW_IMAGE_SCHEME, ZHIHU_IMAGE_SCHEME);
     job.content.summary = frontmatterString(note.frontmatter, "digest", "摘要", "description", "summary") || undefined;
     job.content.cover = base.coverId ?? undefined;
-    checks.push(...checkWeibo({ title, summary: job.content.summary }));
+    checks.push(...checkWeiboArticle({ title, summary: job.content.summary }));
   }
   for (const message of base.warnings) checks.push({ level: "warning", message, fix: "" });
   return { job, assets: base.assets, checks, warnings: base.warnings, previewHtml: base.previewHtml };
@@ -233,6 +233,14 @@ export function xhsDefaults(base: PreparedBase): { text: string; topics: string[
   const topics = normalizeTopics(frontmatterList(fm, "xhs_topics", "小红书话题").concat(frontmatterList(fm, "tags")));
   const subtitle = frontmatterString(fm, "digest", "摘要", "description", "summary") || text.split("\n").find((line) => line.trim())?.slice(0, 46) || "";
   return { text, topics, subtitle };
+}
+
+/** Default body copy and topics for a regular Weibo post; images are selected separately in the window. */
+export function weiboDefaults(base: PreparedBase): { text: string; topics: string[] } {
+  const fm = base.note.frontmatter;
+  const text = frontmatterString(fm, "weibo_text", "微博文案") || base.plainText;
+  const topics = normalizeTopics(frontmatterList(fm, "weibo_topics", "微博话题").concat(frontmatterList(fm, "tags")), 10);
+  return { text, topics };
 }
 
 /** Xiaohongshu: lays the note out as cards (live DOM, no pictures drawn yet). Redone when the title or a card style changes. */
@@ -261,4 +269,13 @@ export async function buildXhsJob(base: PreparedBase, cards: readonly HTMLElemen
     content: { text: options.text.trim(), topics: options.topics, cards: ids }, assets: assets.list(),
   };
   return { job, assets };
+}
+
+/** Regular Weibo post: text + `#话题#` topics + selected image asset ids (≤9). No rendering needed; images come straight from the note. */
+export function buildWeiboPostJob(base: PreparedBase, options: { title: string; text: string; topics: string[]; imageIds: string[] }): { job: BridgeJob; assets: AssetBag } {
+  const job: BridgeJob = {
+    v: BRIDGE_VERSION, id: crypto.randomUUID(), target: "weibo", title: options.title.trim(), noteName: base.note.title,
+    content: { text: options.text.trim(), topics: options.topics, images: options.imageIds }, assets: base.assets.list(),
+  };
+  return { job, assets: base.assets };
 }
