@@ -9,6 +9,33 @@ import type { WechatPublishSettings } from "../src/types";
 afterEach(() => setRequestUrlHandler(async () => { throw new Error("unexpected request"); }));
 
 describe("WeChat direct transport", () => {
+  it.each(["create", "update"])("keeps the selected 1:1 share crop in the native %s article", async (action) => {
+    let article: Record<string, unknown> | undefined;
+    setRequestUrlHandler(async (options) => {
+      const url = String(options.url);
+      if (url.endsWith("/stable_token")) return { status: 200, json: { access_token: "token", expires_in: 7200 } };
+      const payload = JSON.parse(String(options.body)) as { articles: Record<string, unknown> | Array<Record<string, unknown>> };
+      article = Array.isArray(payload.articles) ? payload.articles[0] : payload.articles;
+      if (url.includes("/draft/")) return { status: 200, json: { media_id: "draft-qa", errcode: 0 } };
+      throw new Error("unexpected request");
+    });
+    const client = new WechatDirectClient({ id: "direct:1", name: "QA" }, "wx-test", "secret");
+    const body = { account_id: "direct:1", title: "test", content_html: "<p>test</p>", thumb_media_id: "cover", pic_crop_1_1: "0.574444_0_1_1", publish_now: false as const };
+    if (action === "create") await client.createDraft(body); else await client.updateDraft("draft-qa", body);
+    expect(article).toMatchObject({ thumb_media_id: "cover", pic_crop_1_1: body.pic_crop_1_1 });
+  });
+
+  it("does not add a square crop to legacy native articles", async () => {
+    let article: Record<string, unknown> | undefined;
+    setRequestUrlHandler(async (options) => {
+      if (String(options.url).endsWith("/stable_token")) return { status: 200, json: { access_token: "token", expires_in: 7200 } };
+      article = (JSON.parse(String(options.body)) as { articles: Array<Record<string, unknown>> }).articles[0];
+      return { status: 200, json: { media_id: "draft-qa", errcode: 0 } };
+    });
+    await new WechatDirectClient({ id: "direct:1", name: "QA" }, "wx-test", "secret").createDraft({ account_id: "direct:1", title: "test", content_html: "<p>test</p>", thumb_media_id: "cover", publish_now: false });
+    expect(article).not.toHaveProperty("pic_crop_1_1");
+  });
+
   it.each(["create", "update"])("accepts already-uploaded HTTP WeChat images for %s", async (action) => {
     const calls: string[] = [];
     setRequestUrlHandler(async (options) => {
@@ -89,6 +116,19 @@ describe("mixed account routing", () => {
 });
 
 describe("invited relay", () => {
+  it.each(["create", "update"])("retains square crop coordinates in the relay %s payload", async (action) => {
+    let captured: Record<string, unknown> | undefined;
+    setRequestUrlHandler(async (options) => {
+      captured = JSON.parse(String(options.body)) as Record<string, unknown>;
+      return { status: 200, json: { media_id: "draft-1" } };
+    });
+    const client = new WechatRelayClient({ id: "relay:1", name: "QA" }, "wx-test", "secret", "invite", "https://relay.example.com");
+    const body = { account_id: "relay:1", title: "test", content_html: "<p>test</p>", thumb_media_id: "cover", pic_crop_1_1: "0_0_0.425556_1", publish_now: false as const };
+    if (action === "create") await client.createDraft(body); else await client.updateDraft("draft-1", body);
+    expect(captured).toMatchObject({ pic_crop_1_1: body.pic_crop_1_1, publish_now: false });
+    if (action === "update") expect(captured?.existing_media_id).toBe("draft-1");
+  });
+
   it.each([
     [401, "Relay authentication failed or quota reached", "中转未授权"],
     [503, "Relay is not configured", "尚未配置完成"],

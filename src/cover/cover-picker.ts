@@ -3,10 +3,17 @@ import { askCrop } from "./crop-modal";
 import { autoCrop, clampCrop, type CropRect, renderCover } from "./crop";
 import { chooseImageFile, type CoverCandidate, type CoverSource, decodeSource } from "./source";
 import { type CoverSpec, matchesRatio } from "./spec";
+import { clampSharePosition, wechatSquareCrop } from "./share-crop";
 
 export type CoverMode = "image" | "title" | "none";
 
-export interface CoverResult { data: ArrayBuffer; mime: string; name: string }
+export interface CoverResult {
+  data: ArrayBuffer;
+  mime: string;
+  name: string;
+  /** WeChat 1:1 share crop, normalized against these final uploaded bytes. */
+  pic_crop_1_1?: string;
+}
 
 export interface CoverPickerOptions {
   app: App;
@@ -32,6 +39,7 @@ export class CoverPicker {
   mode: CoverMode = "image";
   private source: CoverSource | null = null;
   private crop: CropRect | null = null;
+  private sharePosition = 0.5;
   private dimensions: { width: number; height: number } | null = null;
   private final: CoverResult | null = null;
   private url = "";
@@ -91,13 +99,16 @@ export class CoverPicker {
     const size = { width: bitmap.width, height: bitmap.height };
     bitmap.close();
     let crop: CropRect | null = null;
+    let sharePosition = 0.5;
     if (askIfNeeded && !matchesRatio(size.width, size.height, this.options.spec)) {
       const choice = await askCrop(this.options.app, source, this.options.spec, null);
       if (!choice) return false;
       crop = choice.crop;
+      sharePosition = clampSharePosition(choice.sharePosition);
     }
     this.source = source;
     this.crop = crop;
+    this.sharePosition = sharePosition;
     this.dimensions = size;
     this.mode = "image";
     await this.refresh();
@@ -111,7 +122,10 @@ export class CoverPicker {
       try {
         const crop = this.crop ? clampCrop(this.crop, bitmap.width, bitmap.height) : autoCrop(bitmap.width, bitmap.height, this.options.spec);
         const rendered = await renderCover(bitmap, crop, this.options.spec);
-        this.final = { data: rendered.data, mime: rendered.mime, name: `cover-${this.options.spec.id}.jpg` };
+        this.final = {
+          data: rendered.data, mime: rendered.mime, name: `cover-${this.options.spec.id}.jpg`,
+          ...(this.options.spec.id === "wechat" ? { pic_crop_1_1: wechatSquareCrop(this.sharePosition, this.options.spec.width, this.options.spec.height) } : {}),
+        };
         this.releaseUrl();
         this.url = URL.createObjectURL(new Blob([rendered.data], { type: rendered.mime }));
       } finally { bitmap.close(); }
@@ -151,9 +165,10 @@ export class CoverPicker {
 
   private async adjust(): Promise<void> {
     if (!this.source) return;
-    const choice = await askCrop(this.options.app, this.source, this.options.spec, this.crop);
+    const choice = await askCrop(this.options.app, this.source, this.options.spec, this.crop, this.sharePosition);
     if (!choice) return;
     this.crop = choice.crop;
+    this.sharePosition = clampSharePosition(choice.sharePosition);
     await this.refresh();
     this.options.onChange();
   }

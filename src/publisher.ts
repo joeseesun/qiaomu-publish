@@ -9,6 +9,7 @@ import { finalizeWechatImages } from "./export-html";
 import type { WechatTransport } from "./transport";
 import { inspectWechatPublishInput } from "./publish-inspect";
 import { truncateWechatText, WECHAT_DRAFT_AUTHOR_MAX_CHARS, WECHAT_DRAFT_DIGEST_MAX_BYTES, WECHAT_DRAFT_DIGEST_MAX_CHARS } from "./publish-limits";
+import type { CoverResult } from "./cover/cover-picker";
 
 export interface DraftMeta {
   accountId: string;
@@ -101,7 +102,7 @@ export async function publishDraft(options: {
   existingMediaId?: string;
   cover?: WechatCoverStyle;
   /** The cover chosen in the window, already cut to 900x383 (a picture or the generated title cover). Replaces every other cover rule. */
-  coverImage?: { data: ArrayBuffer; mime: string; name: string };
+  coverImage?: CoverResult;
   onProgress?: PublishProgress;
 }): Promise<{ mediaId: string; accountName: string }> {
   const { app, client, note, onProgress } = options;
@@ -164,6 +165,7 @@ export async function publishDraft(options: {
     content_source_url: meta.sourceUrl || undefined,
     cover_image_url: coverUrl || undefined,
     thumb_media_id: thumbMediaId || undefined,
+    ...(options.coverImage?.pic_crop_1_1 ? { pic_crop_1_1: options.coverImage.pic_crop_1_1 } : {}),
     need_open_comment: meta.openComment,
     publish_now: false,
   } as const;

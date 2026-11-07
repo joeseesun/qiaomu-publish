@@ -532,6 +532,40 @@ button.qiaomu-cover-button svg { width: 14px; height: 14px; }
 .qiaomu-crop-info { width: min(100%, 620px); margin: 8px auto 0; color: var(--text-muted); font-size: var(--font-ui-smaller); line-height: 1.5; }
 .qiaomu-crop-info.is-warning { color: var(--text-warning); }
 .qiaomu-crop-actions { justify-content: flex-end; margin-top: 16px; }
+
+/* Independently adjustable WeChat share-square crop. */
+.qiaomu-crop-safe.is-movable {
+  box-sizing: border-box;
+  transform: translateY(-50%);
+  pointer-events: auto;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.qiaomu-crop-safe.is-movable:focus-visible {
+  outline: 2px solid var(--text-normal);
+  outline-offset: -4px;
+}
+.qiaomu-crop-frame.is-share-dragging,
+.qiaomu-crop-frame.is-share-dragging .qiaomu-crop-safe { cursor: ew-resize; }
+.qiaomu-crop-share-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: min(100%, 620px);
+  margin: 10px auto 0;
+}
+.qiaomu-crop-share-side { flex: 1; min-width: 0; }
+.qiaomu-crop-share-side .qiaomu-crop-controls { flex-wrap: wrap; margin: 0; }
+.qiaomu-crop-share-position { flex: 1; min-width: 64px; accent-color: var(--text-normal); }
+.qiaomu-crop-share-help { margin-top: 6px; color: var(--text-muted); font-size: var(--font-ui-smaller); }
+.qiaomu-crop-share-preview { flex: 0 0 96px; color: var(--text-muted); font-size: var(--font-ui-smaller); text-align: center; }
+.qiaomu-crop-share-preview canvas { display: block; width: 96px; height: 96px; max-width: 100%; margin-bottom: 4px; border-radius: 4px; background: #111; }
+@media (max-width: 400px) {
+  .qiaomu-crop-share-row { align-items: flex-start; gap: 8px; }
+  .qiaomu-crop-share-preview { flex-basis: 72px; }
+  .qiaomu-crop-share-preview canvas { width: 72px; height: 72px; }
+}
+
 .qiaomu-design-modal.qiaomu-wechat-modal { width: min(560px, 94vw); height: auto; max-height: 90vh; overflow: auto; }
 .qiaomu-design-actions { justify-content: flex-end; margin-top: 12px; }
 

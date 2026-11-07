@@ -12,6 +12,8 @@ export interface WechatDraftRequest {
   content_source_url?: string;
   cover_image_url?: string;
   thumb_media_id?: string;
+  /** WeChat 1:1 crop, normalized against thumb_media_id's image. */
+  pic_crop_1_1?: string;
   need_open_comment?: boolean;
   publish_now: false;
 }

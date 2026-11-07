@@ -120,7 +120,12 @@ export class WechatDirectClient implements WechatTransport {
     let coverId = body.thumb_media_id;
     if (!coverId && body.cover_image_url) coverId = (await this.uploadRemote(body.cover_image_url, "cover")).media_id;
     if (!coverId) throw new Error("请为草稿添加封面");
-    return { title: body.title, author: body.author ?? "", digest: body.digest ?? "", content: doc.body.innerHTML, content_source_url: body.content_source_url ?? "", thumb_media_id: coverId, need_open_comment: body.need_open_comment ? 1 : 0, only_fans_can_comment: 0 };
+    return {
+      title: body.title, author: body.author ?? "", digest: body.digest ?? "", content: doc.body.innerHTML,
+      content_source_url: body.content_source_url ?? "", thumb_media_id: coverId,
+      ...(body.pic_crop_1_1 ? { pic_crop_1_1: body.pic_crop_1_1 } : {}),
+      need_open_comment: body.need_open_comment ? 1 : 0, only_fans_can_comment: 0,
+    };
   }
 
   async createDraft(body: WechatDraftRequest): Promise<WechatDraftResult> {

@@ -18,8 +18,8 @@ export interface CoverSpec {
 export const COVER_SPECS: Record<CoverPlatform, CoverSpec> = {
   wechat: {
     id: "wechat", label: "公众号封面", ratio: 900 / 383, width: 900, height: 383, maxBytes: 2 * 1024 * 1024,
-    note: "公众号头条封面 900×383（2.35:1）。朋友圈和列表会再取中间一块正方形，主体放在中间。",
-    safe: { ratio: 1, label: "虚线框：分享和列表只显示这一块" },
+    note: "公众号头条封面 900×383（2.35:1）。分享方图可在“调整裁切”中拖动虚线框选取，不改变横版封面。",
+    safe: { ratio: 1, label: "虚线框：分享方图选区，可左右拖动" },
   },
   x: {
     id: "x", label: "X 文章封面", ratio: 5 / 2, width: 1500, height: 600, maxBytes: 5 * 1024 * 1024,
