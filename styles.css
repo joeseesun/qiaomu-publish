@@ -588,3 +588,25 @@ button.qiaomu-update-notes-link:hover { background: var(--background-modifier-ho
 @media (max-width: 420px) { .modal.qiaomu-update-notes { padding: 22px; } .qiaomu-update-notes-footer { gap: 20px; } }
 
 .qiaomu-update-notes-option { --checkbox-color: var(--text-normal); --checkbox-color-hover: var(--text-normal); --checkbox-marker-color: var(--background-primary); }
+
+/* ---------- Weibo post image picker ---------- */
+.qiaomu-weibo-images { margin-top: 12px; }
+.qiaomu-weibo-images-head { margin-bottom: 8px; font-size: var(--font-ui-small); color: var(--text-muted); }
+.qiaomu-weibo-images-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; }
+.qiaomu-weibo-image { position: relative; aspect-ratio: 1; border-radius: 6px; overflow: hidden; cursor: pointer; border: 2px solid transparent; background: var(--background-secondary); }
+.qiaomu-weibo-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.qiaomu-weibo-image.is-selected { border-color: var(--interactive-accent); }
+.qiaomu-weibo-image-check { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%; background: var(--interactive-accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.qiaomu-weibo-image-check::before { content: "✓"; }
+.qiaomu-weibo-images-empty { padding: 16px; text-align: center; color: var(--text-muted); font-size: var(--font-ui-small); border: 1px dashed var(--background-modifier-border); border-radius: 6px; }
+
+/* ---------- Weibo post phone preview ---------- */
+.qiaomu-weibo-post { background: #fff; color: #333; font: 15px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; padding: 12px; }
+.qiaomu-weibo-post-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.qiaomu-weibo-post-avatar { width: 36px; height: 36px; border-radius: 50%; background: #eee; flex: none; }
+.qiaomu-weibo-post-author { font-weight: 600; font-size: 14px; }
+.qiaomu-weibo-post-text { white-space: pre-wrap; word-break: break-word; margin-bottom: 8px; }
+.qiaomu-weibo-post-topics { margin-bottom: 10px; }
+.qiaomu-weibo-post-topics span { color: #eb7350; margin-right: 6px; }
+.qiaomu-weibo-post-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; border-radius: 6px; overflow: hidden; }
+.qiaomu-weibo-post-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
