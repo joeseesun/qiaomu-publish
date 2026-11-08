@@ -541,7 +541,7 @@ export class ExternalPublishModal extends Modal {
     } else this.refreshWeiboPostCounter();
     if (!this.weiboCopyAdopted) {
       const selectedIds = rawSelection ? ExternalPublishModal.extractImageIds(rawSelection, base) : [];
-      this.weiboImageIds = selectedIds.length ? selectedIds : base.note.images.slice(0, WEIBO_POST_IMAGES_MAX).map((image) => image.id);
+      this.weiboImageIds = rawSelection ? selectedIds : base.note.images.slice(0, WEIBO_POST_IMAGES_MAX).map((image) => image.id);
     }
     this.weiboCopyAdopted = true;
   }
@@ -557,9 +557,9 @@ export class ExternalPublishModal extends Modal {
       .trim();
   }
 
-  /** For the Weibo headline-article window, strip image markers from the editable body so `![[...]]` does not show up. */
+  /** Keep Markdown source intact: editing text must preserve inline image positions. */
   private stripMarkdownImages(text: string): string {
-    return this.target === "weibo-article" ? ExternalPublishModal.stripImageMarkup(text) : text;
+    return text;
   }
 
   /** Finds the note image ids whose file names appear in the selected text (so selected pictures become the post's pictures). */
