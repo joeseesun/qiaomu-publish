@@ -47,13 +47,13 @@ class CoverCropModal extends Modal {
     this.image = this.frame.createEl("img", { cls: "qiaomu-crop-image", attr: { alt: "", draggable: "false" } });
     if (this.spec.safe) {
       this.safe = this.frame.createDiv({ cls: "qiaomu-crop-safe", attr: this.movableShare
-        ? { tabindex: "0", role: "slider", "aria-label": "分享方图位置", "aria-valuemin": "0", "aria-valuemax": "100", "aria-orientation": "horizontal" }
+        ? { tabindex: "0", role: "slider", "aria-valuemin": "0", "aria-valuemax": "100", "aria-orientation": "horizontal" }
         : { "aria-hidden": "true" } });
       const horizontal = this.spec.safe.ratio >= this.spec.ratio;
       this.safe.setCssProps(horizontal
         ? { "--qiaomu-safe-w": "100%", "--qiaomu-safe-h": `${this.spec.ratio / this.spec.safe.ratio * 100}%` }
         : { "--qiaomu-safe-w": `${this.spec.safe.ratio / this.spec.ratio * 100}%`, "--qiaomu-safe-h": "100%" });
-      if (this.movableShare) this.safe.addClass("is-movable");
+      if (this.movableShare) { this.safe.addClass("is-movable"); setName(this.safe, "分享方图位置"); }
       el.createDiv({ cls: "qiaomu-crop-legend", text: this.movableShare
         ? "虚线框：分享方图选区，可左右拖动；横版封面的构图不受影响。"
         : this.spec.safe.label });
@@ -89,7 +89,8 @@ class CoverCropModal extends Modal {
     controls.createEl("button", { text: "居中", attr: { type: "button" } }).addEventListener("click", () => this.setSharePosition(0.5));
     side.createDiv({ cls: "qiaomu-crop-share-help", text: "也可聚焦虚线框，用左右方向键微调；Home / End 移至两端。" });
     const preview = row.createDiv({ cls: "qiaomu-crop-share-preview" });
-    this.shareCanvas = preview.createEl("canvas", { attr: { width: "96", height: "96", role: "img", "aria-label": "分享方图实时预览" } });
+    this.shareCanvas = preview.createEl("canvas", { attr: { width: "96", height: "96", role: "img" } });
+    setName(this.shareCanvas, "分享方图实时预览");
     preview.createDiv({ text: "分享方图预览" });
     this.setSharePosition(this.sharePosition);
   }

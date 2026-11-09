@@ -273,9 +273,16 @@ export async function buildXhsJob(base: PreparedBase, cards: readonly HTMLElemen
 
 /** Regular Weibo post: text + `#话题#` topics + selected image asset ids (≤9). No rendering needed; images come straight from the note. */
 export function buildWeiboPostJob(base: PreparedBase, options: { title: string; text: string; topics: string[]; imageIds: string[] }): { job: BridgeJob; assets: AssetBag } {
+  const assets = new AssetBag();
+  const imageIds = [...new Set(options.imageIds)];
+  for (const id of imageIds) {
+    const image = base.assets.get(id);
+    if (!image) throw new Error("所选图片尚未准备好，请重新选择图片。");
+    assets.add(id, image.data, image.mime, image.name);
+  }
   const job: BridgeJob = {
     v: BRIDGE_VERSION, id: crypto.randomUUID(), target: "weibo", title: options.title.trim(), noteName: base.note.title,
-    content: { text: options.text.trim(), topics: options.topics, images: options.imageIds }, assets: base.assets.list(),
+    content: { text: options.text.trim(), topics: options.topics, images: imageIds }, assets: assets.list(),
   };
-  return { job, assets: base.assets };
+  return { job, assets };
 }

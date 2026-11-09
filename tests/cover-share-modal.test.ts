@@ -176,3 +176,13 @@ describe("WeChat independent share-square controls", () => {
     expect(URL.createObjectURL).not.toHaveBeenCalled();
   });
 });
+
+it("names share controls without host tooltip attributes", async () => {
+  start(); await ready();
+  for (const selector of [".qiaomu-crop-safe", "canvas"]) {
+    const control = get(selector);
+    expect(control.hasAttribute("aria-label")).toBe(false);
+    const name = document.getElementById(control.getAttribute("aria-labelledby")!);
+    expect(name?.textContent).toContain("分享方图");
+  }
+});

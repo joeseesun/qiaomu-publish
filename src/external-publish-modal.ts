@@ -1,4 +1,4 @@
-import { type App, Component, Modal, Notice, setIcon, Setting, type TFile } from "obsidian";
+import { type App, Component, getLinkpath, Modal, Notice, setIcon, Setting, type TFile } from "obsidian";
 import type QiaomuPublishPlugin from "./main";
 import type { ExternalPublishSettings } from "./types";
 import { setName } from "./accessible-name";
@@ -108,7 +108,8 @@ export class ExternalPublishModal extends Modal {
     const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter ?? {};
     const own = target === "xhs" ? frontmatter.xhs_title ?? frontmatter["小红书标题"] : undefined;
     this.articleTitle = typeof own === "string" && own.trim() ? own.trim() : defaultPublishTitle(frontmatter, file.basename);
-    this.weiboSelection = app.workspace.activeEditor?.editor?.getSelection() ?? "";
+    const active = app.workspace.activeEditor;
+    this.weiboSelection = active?.file?.path === file.path ? active.editor?.getSelection() ?? "" : "";
   }
 
   override onOpen(): void {
@@ -405,10 +406,17 @@ export class ExternalPublishModal extends Modal {
       const url = this.assetUrls.get(image.id);
       if (!url) continue;
       const selected = this.weiboImageIds.includes(image.id);
-      const figure = grid.createDiv({ cls: `qiaomu-weibo-image${selected ? " is-selected" : ""}` });
+      const figure = grid.createEl("button", { cls: `qiaomu-weibo-image${selected ? " is-selected" : ""}`, attr: { type: "button", "aria-pressed": String(selected) } });
+      setName(figure, image.name);
+      figure.dataset.imageId = image.id;
       figure.createEl("img", { attr: { src: url, alt: image.name, loading: "lazy" } });
-      if (selected) figure.createSpan({ cls: "qiaomu-weibo-image-check" });
-      figure.addEventListener("click", () => this.toggleWeiboImage(image.id));
+      if (selected) setIcon(figure.createSpan({ cls: "qiaomu-weibo-image-check", attr: { "aria-hidden": "true" } }), "check");
+      figure.addEventListener("click", () => {
+        const focused = figure.ownerDocument.activeElement === figure;
+        this.toggleWeiboImage(image.id);
+        if (focused) Array.from(this.imagesEl.querySelectorAll<HTMLButtonElement>("button.qiaomu-weibo-image"))
+          .find((button) => button.dataset.imageId === image.id)?.focus();
+      });
     }
   }
 
@@ -533,15 +541,15 @@ export class ExternalPublishModal extends Modal {
     const rawSelection = this.weiboSelection.trim();
     if (!this.weiboTextEdited) {
       const selection = ExternalPublishModal.stripImageMarkup(rawSelection);
-      const body = selection || defaults.text;
+      const body = rawSelection ? selection : defaults.text;
       this.weiboText = body;
       this.textArea.value = body;
       const over = weiboPostBodyLength(body, this.weiboTopics) > WEIBO_POST_TEXT_MAX;
       this.enforceWeiboPostLimit(over && !this.weiboCopyAdopted ? `${rawSelection ? "选中内容" : "笔记正文"} ${weiboPostBodyLength(body, this.weiboTopics)} 字，已自动截取到 ${WEIBO_POST_TEXT_MAX} 字以内，可以继续修改。` : undefined);
     } else this.refreshWeiboPostCounter();
     if (!this.weiboCopyAdopted) {
-      const selectedIds = rawSelection ? ExternalPublishModal.extractImageIds(rawSelection, base) : [];
-      this.weiboImageIds = rawSelection ? selectedIds : base.note.images.slice(0, WEIBO_POST_IMAGES_MAX).map((image) => image.id);
+      const selectedIds = rawSelection ? this.extractImageIds(rawSelection, base) : [];
+      this.weiboImageIds = rawSelection ? selectedIds : base.assets.list().filter((asset) => base.note.images.some((image) => image.id === asset.id)).slice(0, WEIBO_POST_IMAGES_MAX).map((asset) => asset.id);
     }
     this.weiboCopyAdopted = true;
   }
@@ -562,20 +570,24 @@ export class ExternalPublishModal extends Modal {
     return text;
   }
 
-  /** Finds the note image ids whose file names appear in the selected text (so selected pictures become the post's pictures). */
-  private static extractImageIds(selection: string, base: PreparedBase): string[] {
-    const names = new Set<string>();
-    const wiki = /!\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g;
-    const md = /!\[[^\]]*\]\(([^)]+)\)/g;
-    let m: RegExpExecArray | null;
-    while ((m = wiki.exec(selection))) names.add((m[1] ?? "").trim());
-    while ((m = md.exec(selection))) names.add((m[1] ?? "").trim());
+  /** Resolve selected sources exactly; equal basenames in other folders/hosts are unrelated. */
+  private extractImageIds(selection: string, base: PreparedBase): string[] {
+    const references = Array.from(selection.matchAll(/!\[\[([^\]|]+)(?:\|[^\]]*)?\]\]|!\[[^\]]*\]\(([^)]+)\)/g), (match) => ({
+      index: match.index, value: (match[1] ?? match[2] ?? "").trim(), wiki: !!match[1],
+    }));
+    const available = new Set(base.assets.list().map((asset) => asset.id));
     const ids: string[] = [];
-    for (const image of base.note.images) {
-      const baseName = image.name.split(/[\\/]/).pop() ?? image.name;
-      for (const name of names) {
-        if ((name.split(/[\\/]/).pop() ?? name) === baseName) { ids.push(image.id); break; }
-      }
+    for (const reference of references) {
+      // Markdown destinations may be angle-bracketed or followed by a quoted title.
+      const raw = reference.wiki ? reference.value : (reference.value.match(/^<([^>]+)>|^(\S+)/)?.slice(1).find(Boolean) ?? "");
+      let path = raw;
+      try { path = decodeURIComponent(raw); } catch { /* Keep literal malformed escapes. */ }
+      const remote = /^https?:\/\//i.test(raw);
+      const resolved = remote ? null : this.app.metadataCache.getFirstLinkpathDest(getLinkpath(path), this.file.path);
+      const image = base.note.images.find((item) => available.has(item.id) && (remote
+        ? item.kind === "remote" && item.url === raw
+        : item.kind === "vault" && resolved?.path === item.file.path));
+      if (image && !ids.includes(image.id)) ids.push(image.id);
       if (ids.length >= WEIBO_POST_IMAGES_MAX) break;
     }
     return ids;

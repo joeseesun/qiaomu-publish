@@ -2,6 +2,7 @@ import type { UpdateEntry } from './update-notes';
 
 // Prepend a version and user-facing changes for every release. Keep older entries for skipped updates.
 export const UPDATE_ENTRIES: UpdateEntry[] = [
+  { version: '0.4.0', items: ['shareSquare', 'weiboDrafts'] },
   { version: '0.3.4', items: ['largeImages', 'imageRecovery', 'imageFailures'] },
   { version: '0.3.3', items: ['introduced', 'revisit', 'control'] },
 ];

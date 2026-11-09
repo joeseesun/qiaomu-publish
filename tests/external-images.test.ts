@@ -5,8 +5,8 @@ vi.mock("obsidian", () => ({ requestUrl: vi.fn(), TFile: class {}, getLinkpath: 
 vi.mock("../src/render-note", () => ({ renderNoteForWechat: vi.fn(async () => rendered.note) }));
 vi.mock("../src/external/xhs-cards", () => ({ layoutXhsCards: vi.fn(), renderCardBlobs: vi.fn() }));
 vi.mock("../src/rasterize", () => ({ svgToPng: vi.fn(async () => ({ blob: new Blob([new Uint8Array([137, 80, 78, 71])], { type: "image/png" }) })) }));
-import { prepareBase, buildJob } from "../src/external/prepare";
-import { loadArticleImage, normalizeImage } from "../src/external/assets";
+import { prepareBase, buildJob, buildWeiboPostJob } from "../src/external/prepare";
+import { AssetBag, loadArticleImage, normalizeImage } from "../src/external/assets";
 
 beforeEach(() => {
   rendered.note = { title: "test", html: "<p>text</p>", frontmatter: {}, images: [], warnings: [], dispose: vi.fn() };
@@ -69,5 +69,24 @@ describe("animation preservation", () => {
   ])("rejects animated SVG without losing motion: %s", async content => {
     const bytes = new TextEncoder().encode(`<svg xmlns="http://www.w3.org/2000/svg">${content}</svg>`).buffer;
     await expect(normalizeImage(bytes, "animated.svg", "image/svg+xml", limits)).rejects.toThrow("动画 SVG");
+  });
+});
+
+
+describe("Weibo selected asset scope", () => {
+  it("exposes only selected bytes to the bridge and deduplicates references", () => {
+    const assets = new AssetBag();
+    assets.add("chosen", new ArrayBuffer(4), "image/png", "chosen.png");
+    assets.add("private", new ArrayBuffer(8), "image/png", "private.png");
+    const result = buildWeiboPostJob({ assets, note: { title: "Note" } } as never,
+      { title: "Post", text: "Hello", topics: [], imageIds: ["chosen", "chosen"] });
+    expect(result.job.content.images).toEqual(["chosen"]);
+    expect(result.job.assets.map(asset => asset.id)).toEqual(["chosen"]);
+    expect(result.assets.get("private")).toBeUndefined();
+    expect(assets.size).toBe(2);
+  });
+  it("fails before handing off a missing selected asset", () => {
+    expect(() => buildWeiboPostJob({ assets: new AssetBag(), note: { title: "Note" } } as never,
+      { title: "Post", text: "", topics: [], imageIds: ["missing"] })).toThrow("所选图片");
   });
 });

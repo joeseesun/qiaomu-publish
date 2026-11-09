@@ -1,7 +1,7 @@
 {
   "name": "qiaomu-publish",
-  "version": "0.3.4",
-  "description": "Format notes for WeChat drafts, X Articles, Zhihu and Xiaohongshu with Qiaomu Clipper.",
+  "version": "0.4.0",
+  "description": "Format notes for WeChat drafts, X Articles, Zhihu, Xiaohongshu and Weibo with Qiaomu Clipper.",
   "type": "module",
   "main": "main.js",
   "scripts": {
@@ -21,7 +21,7 @@
   "devDependencies": {
     "@types/node": "^24.10.0",
     "esbuild": "^0.25.0",
-    "happy-dom": "20.14.5",
+    "happy-dom": "21.0.4",
     "obsidian": "^1.13.0",
     "typescript": "^5.8.3",
     "vitest": "^4.0.0"

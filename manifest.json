@@ -1,9 +1,9 @@
 {
   "id": "qiaomu-publish",
   "name": "Qiaomu Publish",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "minAppVersion": "1.11.4",
-  "description": "Format notes for WeChat drafts, X Articles, Zhihu and Xiaohongshu with Qiaomu Clipper.",
+  "description": "Format notes for WeChat drafts, X Articles, Zhihu, Xiaohongshu and Weibo with Qiaomu Clipper.",
   "author": "向阳乔木",
   "authorUrl": "https://github.com/joeseesun",
   "isDesktopOnly": false
