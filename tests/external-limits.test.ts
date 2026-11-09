@@ -113,3 +113,11 @@ describe("Weibo regular post limits", () => {
     expect(checkWeiboPost({ text: "正文", topics: [], images: 9 })).toEqual([]);
   });
 });
+
+it('counts exactly the text sent by the Clipper Weibo composer', () => {
+  const text = 'a'.repeat(1992), topics = ['one', 'two'];
+  const composed = `${text.trim()}\n${topics.map(topic => `#${topic}#`).join(' ')}`;
+  expect(composed.length).toBeGreaterThan(2000);
+  expect(checkWeiboPost({ text, topics, images: 0 }).some(check => check.level === 'error')).toBe(true);
+  expect(checkWeiboPost({ text: 'a'.repeat(1990), topics: ['abcdefgh'], images: 0 }).some(check => check.level === 'error')).toBe(true);
+});

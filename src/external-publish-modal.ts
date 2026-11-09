@@ -347,7 +347,7 @@ export class ExternalPublishModal extends Modal {
   }
 
   private enforceWeiboPostLimit(source?: string): void {
-    const budget = WEIBO_POST_TEXT_MAX - this.weiboTopics.reduce((sum, topic) => sum + textLength(topic) + 2, 0);
+    const budget = WEIBO_POST_TEXT_MAX - weiboPostBodyLength("", this.weiboTopics);
     const result = truncateText(this.weiboText, Math.max(0, budget));
     if (result.truncated) {
       this.weiboText = result.text;

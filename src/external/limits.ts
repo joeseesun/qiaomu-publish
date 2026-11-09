@@ -50,7 +50,8 @@ export function xhsTextBudget(topics: readonly string[]): number {
 
 /** Weibo post body length: text plus `#话题#` topics (each topic wrapped in two `#`). */
 export function weiboPostBodyLength(text: string, topics: readonly string[]): number {
-  return textLength(text) + topics.reduce((sum, topic) => sum + textLength(topic) + 2, 0);
+  // Clipper inserts a newline before the topics and a space between each pair.
+  return textLength(text.trim()) + topics.reduce((sum, topic) => sum + textLength(topic) + 2, 0) + topics.length;
 }
 
 /** Cuts text to `limit` characters, preferring the end of a sentence or line in the last part of the allowance; adds … only when it had to cut mid-sentence. */
