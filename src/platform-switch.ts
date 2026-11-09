@@ -7,6 +7,8 @@ const CHOICES: { id: PublishChoice; label: string }[] = [
   { id: "x", label: TARGET_LABEL.x },
   { id: "zhihu", label: TARGET_LABEL.zhihu },
   { id: "xhs", label: TARGET_LABEL.xhs },
+  { id: "weibo", label: TARGET_LABEL.weibo },
+  { id: "weibo-article", label: TARGET_LABEL["weibo-article"] },
 ];
 
 /** One row at the top of every publish window: where this note goes. Picking another platform swaps the window. */

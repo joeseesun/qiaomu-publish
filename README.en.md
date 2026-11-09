@@ -30,6 +30,8 @@ Download `main.js`, `manifest.json` and `styles.css` from the same [GitHub relea
 
 ## What it removes from your workflow
 
+Weibo posts and article drafts require **Qiaomu Clipper 1.19.6+** ([releases](https://github.com/joeseesun/qiaomu-clipper/releases); check the actual store version). Posts can use a note selection and up to nine chosen images. Review the prepared content in Weibo before publishing. The WeChat square sharing crop can now be moved independently of the wide cover.
+
 | Repetitive work | Qiaomu Publish |
 | --- | --- |
 | Formatting again after pasting | Live preview and the same inlined styles for copy, export and drafts |

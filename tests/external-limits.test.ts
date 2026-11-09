@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkX, checkXhs, normalizeTopics, xhsBodyLength } from "../src/external/limits";
+import { checkWeiboArticle, checkWeiboPost, checkX, checkXhs, normalizeTopics, xhsBodyLength } from "../src/external/limits";
 
 describe("platform limits", () => {
   it("counts topics inside the Xiaohongshu body limit", () => {
@@ -48,4 +48,76 @@ describe("Xiaohongshu copy limit", () => {
   it("needs at least one card", () => {
     expect(checkXhs({ title: "标题", text: "正文", topics: [], cards: 0 }).some((check) => check.level === "error")).toBe(true);
   });
+});
+
+describe("Weibo headline article limits", () => {
+  it("passes a short title and no summary", () => {
+    expect(checkWeiboArticle({ title: "短标题" })).toEqual([]);
+  });
+
+  it("blocks a missing title", () => {
+    expect(checkWeiboArticle({ title: "" })[0]?.level).toBe("error");
+  });
+
+  it("blocks a title over 32 characters", () => {
+    const long = "字".repeat(33);
+    expect(checkWeiboArticle({ title: long })[0]?.level).toBe("error");
+  });
+
+  it("accepts a title exactly 32 characters", () => {
+    expect(checkWeiboArticle({ title: "字".repeat(32) })).toEqual([]);
+  });
+
+  it("blocks a summary over 44 characters", () => {
+    const long = "字".repeat(45);
+    expect(checkWeiboArticle({ title: "标题", summary: long })[0]?.level).toBe("error");
+  });
+
+  it("accepts a summary exactly 44 characters", () => {
+    expect(checkWeiboArticle({ title: "标题", summary: "字".repeat(44) })).toEqual([]);
+  });
+
+  it("skips summary check when summary is absent", () => {
+    expect(checkWeiboArticle({ title: "标题" })).toEqual([]);
+  });
+});
+
+describe("Weibo regular post limits", () => {
+  it("passes text and images", () => {
+    expect(checkWeiboPost({ text: "短正文", topics: [], images: 3 })).toEqual([]);
+  });
+
+  it("blocks empty text and no images", () => {
+    expect(checkWeiboPost({ text: "", topics: [], images: 0 })[0]?.level).toBe("error");
+  });
+
+  it("counts topics toward the 2000-char limit", () => {
+    const text = "字".repeat(1990);
+    const topics = ["话题"];
+    // 1990 + (2 + 2) = 1994, under 2000
+    expect(checkWeiboPost({ text, topics, images: 0 })).toEqual([]);
+  });
+
+  it("blocks text plus topics over 2000 chars", () => {
+    const text = "字".repeat(2000);
+    const topics = ["话题"];
+    // 2000 + 4 = 2004, over 2000
+    expect(checkWeiboPost({ text, topics, images: 0 })[0]?.level).toBe("error");
+  });
+
+  it("blocks more than 9 images", () => {
+    expect(checkWeiboPost({ text: "正文", topics: [], images: 10 })[0]?.level).toBe("error");
+  });
+
+  it("accepts exactly 9 images", () => {
+    expect(checkWeiboPost({ text: "正文", topics: [], images: 9 })).toEqual([]);
+  });
+});
+
+it('counts exactly the text sent by the Clipper Weibo composer', () => {
+  const text = 'a'.repeat(1992), topics = ['one', 'two'];
+  const composed = `${text.trim()}\n${topics.map(topic => `#${topic}#`).join(' ')}`;
+  expect(composed.length).toBeGreaterThan(2000);
+  expect(checkWeiboPost({ text, topics, images: 0 }).some(check => check.level === 'error')).toBe(true);
+  expect(checkWeiboPost({ text: 'a'.repeat(1990), topics: ['abcdefgh'], images: 0 }).some(check => check.level === 'error')).toBe(true);
 });

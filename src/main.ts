@@ -50,7 +50,7 @@ export default class QiaomuPublishPlugin extends Plugin {
         return true;
       },
     });
-    for (const target of ["x", "zhihu", "xhs"] as const) {
+    for (const target of ["x", "zhihu", "xhs", "weibo", "weibo-article"] as const) {
       this.addCommand({
         id: `publish-${target}-draft`,
         name: `发布当前笔记到${TARGET_LABEL[target]}草稿`,
@@ -77,7 +77,7 @@ export default class QiaomuPublishPlugin extends Plugin {
         if (!(file instanceof TFile) || file.extension !== "md") return;
         menu.addItem((item) => item.setTitle("预览公众号排版").setIcon("smartphone").setSection("action").onClick(() => void this.openWechatPreview(file)));
         menu.addItem((item) => item.setTitle("发布到公众号草稿箱").setIcon("send").setSection("action").onClick(() => this.openWechatPublish(file)));
-        for (const target of ["x", "zhihu", "xhs"] as const) menu.addItem((item) => item.setTitle(`发布到${TARGET_LABEL[target]}草稿`).setIcon("send").setSection("action").onClick(() => this.openExternalPublish(file, target)));
+        for (const target of ["x", "zhihu", "xhs", "weibo", "weibo-article"] as const) menu.addItem((item) => item.setTitle(`发布到${TARGET_LABEL[target]}草稿`).setIcon("send").setSection("action").onClick(() => this.openExternalPublish(file, target)));
       })
     );
   }

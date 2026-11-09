@@ -1,5 +1,5 @@
 /** Cover shapes per platform. Output sizes are what the picture is cut to before it is uploaded, so no platform has to crop it again. */
-export type CoverPlatform = "wechat" | "x" | "zhihu";
+export type CoverPlatform = "wechat" | "x" | "zhihu" | "weibo-article";
 
 export interface CoverSpec {
   id: CoverPlatform;
@@ -18,8 +18,8 @@ export interface CoverSpec {
 export const COVER_SPECS: Record<CoverPlatform, CoverSpec> = {
   wechat: {
     id: "wechat", label: "公众号封面", ratio: 900 / 383, width: 900, height: 383, maxBytes: 2 * 1024 * 1024,
-    note: "公众号头条封面 900×383（2.35:1）。朋友圈和列表会再取中间一块正方形，主体放在中间。",
-    safe: { ratio: 1, label: "虚线框：分享和列表只显示这一块" },
+    note: "公众号头条封面 900×383（2.35:1）。分享方图可在“调整裁切”中拖动虚线框选取，不改变横版封面。",
+    safe: { ratio: 1, label: "虚线框：分享方图选区，可左右拖动" },
   },
   x: {
     id: "x", label: "X 文章封面", ratio: 5 / 2, width: 1500, height: 600, maxBytes: 5 * 1024 * 1024,
@@ -29,6 +29,11 @@ export const COVER_SPECS: Record<CoverPlatform, CoverSpec> = {
   zhihu: {
     id: "zhihu", label: "知乎题图", ratio: 690 / 280, width: 1380, height: 560, maxBytes: 5 * 1024 * 1024,
     note: "知乎题图建议 690×280，这里按 2 倍清晰度裁成 1380×560。列表页会再裁小，主体放在中间。",
+    safe: { ratio: 1, label: "虚线框：列表缩略图只显示这一块" },
+  },
+  "weibo-article": {
+    id: "weibo-article", label: "微博长文封面", ratio: 16 / 9, width: 1280, height: 720, maxBytes: 5 * 1024 * 1024,
+    note: "微博长文封面按 16:9 裁成 1280×720。列表页会再裁小，主体放在中间。",
     safe: { ratio: 1, label: "虚线框：列表缩略图只显示这一块" },
   },
 };

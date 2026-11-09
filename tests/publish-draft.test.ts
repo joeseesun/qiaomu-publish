@@ -43,3 +43,42 @@ describe("text-only note publishing", () => {
     expect(result.mediaId).toBe("draft-1");
   });
 });
+
+describe("chosen cover share crop", () => {
+  it.each(["create", "update"])("passes the uploaded cover's square coordinates to %s", async (action) => {
+    const captured: Array<{ action: string; body: WechatDraftRequest }> = [];
+    const client: WechatTransport = {
+      listAccounts: async () => [{ id: "relay:1", name: "测试" }],
+      uploadImage: async () => ({ media_id: "chosen-cover" }),
+      createDraft: async (body) => { captured.push({ action: "create", body }); return { media_id: "draft-1", account: { id: "relay:1", name: "测试" } }; },
+      updateDraft: async (_id, body) => { captured.push({ action: "update", body }); return { media_id: "draft-1", account: { id: "relay:1", name: "测试" } }; },
+      getDraft: async () => ({ title: "" }),
+    };
+    const meta: DraftMeta = { accountId: "relay:1", title: "测试", author: "", digest: "", sourceUrl: "", cover: "", coverText: "", openComment: true };
+    await publishDraft({
+      app: {} as never, client, file: { path: "article.md" } as never, meta,
+      note: { title: meta.title, html: "<p>正文</p>", images: [], warnings: [], frontmatter: {}, dispose: () => {} },
+      wechatHtml: "<p>正文</p>",
+      coverImage: { data: new ArrayBuffer(10), mime: "image/jpeg", name: "cover-wechat.jpg", pic_crop_1_1: "0.574444_0_1_1" },
+      existingMediaId: action === "update" ? "draft-1" : undefined,
+    });
+    expect(captured).toHaveLength(1);
+    expect(captured[0]).toMatchObject({ action, body: { thumb_media_id: "chosen-cover", pic_crop_1_1: "0.574444_0_1_1", publish_now: false } });
+  });
+
+  it("does not add a square field to legacy covers without an explicit selection", async () => {
+    let captured: WechatDraftRequest | undefined;
+    const client: WechatTransport = {
+      listAccounts: async () => [], uploadImage: async () => ({ media_id: "chosen-cover" }),
+      createDraft: async (body) => { captured = body; return { media_id: "draft-1", account: { id: "relay:1", name: "测试" } }; },
+      getDraft: async () => ({ title: "" }), updateDraft: async () => { throw new Error("unexpected update"); },
+    };
+    const meta: DraftMeta = { accountId: "relay:1", title: "测试", author: "", digest: "", sourceUrl: "", cover: "", coverText: "", openComment: true };
+    await publishDraft({
+      app: {} as never, client, file: { path: "article.md" } as never, meta,
+      note: { title: meta.title, html: "<p>正文</p>", images: [], warnings: [], frontmatter: {}, dispose: () => {} },
+      wechatHtml: "<p>正文</p>", coverImage: { data: new ArrayBuffer(10), mime: "image/jpeg", name: "legacy-cover.jpg" },
+    });
+    expect(captured).not.toHaveProperty("pic_crop_1_1");
+  });
+});

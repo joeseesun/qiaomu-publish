@@ -4,6 +4,12 @@ export const XHS_TITLE_MAX = 20;
 export const XHS_TEXT_MAX = 1000;
 export const XHS_IMAGES_MAX = 18;
 export const ZHIHU_TITLE_MAX = 100;
+/** Weibo headline article limits: title ≤ 32, summary ≤ 44 (enforced by the draft API). */
+export const WEIBO_ARTICLE_TITLE_MAX = 32;
+export const WEIBO_ARTICLE_SUMMARY_MAX = 44;
+/** Weibo regular post: body text ≤ 2000, up to 9 images. */
+export const WEIBO_POST_TEXT_MAX = 2000;
+export const WEIBO_POST_IMAGES_MAX = 9;
 /** X Articles get unreliable past this many pictures, tables and charts; the Clipper engine enforces the same ceiling. */
 export const X_MEDIA_SOFT_LIMIT = 25;
 
@@ -11,6 +17,8 @@ export const IMAGE_LIMITS: Record<PublishTargetId, { maxBytes: number; maxEdge: 
   x: { maxBytes: 15 * 1024 * 1024, maxEdge: 4096 },
   zhihu: { maxBytes: 20 * 1024 * 1024, maxEdge: 4096 },
   xhs: { maxBytes: 8 * 1024 * 1024, maxEdge: 4096 },
+  weibo: { maxBytes: 20 * 1024 * 1024, maxEdge: 4096 },
+  "weibo-article": { maxBytes: 20 * 1024 * 1024, maxEdge: 4096 },
 };
 
 export interface ExternalCheck { level: "error" | "warning" | "info"; message: string; fix: string }
@@ -38,6 +46,12 @@ export function xhsBodyLength(text: string, topics: readonly string[]): number {
 /** Characters left for the body once the topics are counted. */
 export function xhsTextBudget(topics: readonly string[]): number {
   return Math.max(0, XHS_TEXT_MAX - topics.reduce((sum, topic) => sum + textLength(topic) + 2, 0));
+}
+
+/** Weibo post body length: text plus `#话题#` topics (each topic wrapped in two `#`). */
+export function weiboPostBodyLength(text: string, topics: readonly string[]): number {
+  // Clipper inserts a newline before the topics and a space between each pair.
+  return textLength(text.trim()) + topics.reduce((sum, topic) => sum + textLength(topic) + 2, 0) + topics.length;
 }
 
 /** Cuts text to `limit` characters, preferring the end of a sentence or line in the last part of the allowance; adds … only when it had to cut mid-sentence. */
@@ -69,6 +83,27 @@ export function checkZhihu(input: { title: string }): ExternalCheck[] {
   if (!title) return [{ level: "error", message: "还没有标题", fix: "在上面填写标题" }];
   if (title > ZHIHU_TITLE_MAX) return [{ level: "error", message: `标题 ${title} 字，知乎最多 ${ZHIHU_TITLE_MAX} 字`, fix: "缩短标题" }];
   return [];
+}
+
+export function checkWeiboArticle(input: { title: string; summary?: string }): ExternalCheck[] {
+  const checks: ExternalCheck[] = [];
+  const title = textLength(input.title.trim());
+  if (!title) checks.push({ level: "error", message: "还没有标题", fix: "在上面填写标题" });
+  else if (title > WEIBO_ARTICLE_TITLE_MAX) checks.push({ level: "error", message: `标题 ${title} 字，微博长文最多 ${WEIBO_ARTICLE_TITLE_MAX} 字`, fix: "缩短标题" });
+  if (input.summary !== undefined) {
+    const summary = textLength(input.summary.trim());
+    if (summary > WEIBO_ARTICLE_SUMMARY_MAX) checks.push({ level: "error", message: `摘要 ${summary} 字，微博长文最多 ${WEIBO_ARTICLE_SUMMARY_MAX} 字`, fix: "在笔记属性 digest/摘要里缩短，或留空" });
+  }
+  return checks;
+}
+
+export function checkWeiboPost(input: { text: string; topics: string[]; images: number }): ExternalCheck[] {
+  const checks: ExternalCheck[] = [];
+  const body = weiboPostBodyLength(input.text, input.topics);
+  if (!input.text.trim() && input.images === 0) checks.push({ level: "error", message: "正文和图片都为空", fix: "写几句话或选几张图" });
+  else if (body > WEIBO_POST_TEXT_MAX) checks.push({ level: "error", message: `正文含话题 ${body} 字，微博最多 ${WEIBO_POST_TEXT_MAX} 字`, fix: "在正文框里删减" });
+  if (input.images > WEIBO_POST_IMAGES_MAX) checks.push({ level: "error", message: `选了 ${input.images} 张图，微博最多 ${WEIBO_POST_IMAGES_MAX} 张`, fix: "去掉几张图" });
+  return checks;
 }
 
 export function checkX(input: { title: string; media: number }): ExternalCheck[] {

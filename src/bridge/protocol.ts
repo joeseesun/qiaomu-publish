@@ -8,15 +8,17 @@
  */
 export const BRIDGE_VERSION = 1;
 
-export type PublishTargetId = "x" | "zhihu" | "xhs";
+export type PublishTargetId = "x" | "zhihu" | "xhs" | "weibo" | "weibo-article";
 
 export const TARGET_LANDING_URL: Record<PublishTargetId, string> = {
   x: "https://x.com/compose/articles",
   zhihu: "https://zhuanlan.zhihu.com/write",
   xhs: "https://creator.xiaohongshu.com/publish/publish?source=official&target=image",
+  weibo: "https://weibo.com/",
+  "weibo-article": "https://card.weibo.com/article/v5/editor",
 };
 
-export const TARGET_LABEL: Record<PublishTargetId, string> = { x: "X 文章", zhihu: "知乎", xhs: "小红书" };
+export const TARGET_LABEL: Record<PublishTargetId, string> = { x: "X 文章", zhihu: "知乎", xhs: "小红书", weibo: "微博", "weibo-article": "微博长文" };
 
 export interface BridgeAsset {
   id: string;
@@ -28,15 +30,17 @@ export interface BridgeAsset {
 export interface BridgeJobContent {
   /** X: Markdown whose images use `https://qm-image.local/<assetId>` addresses. */
   markdown?: string;
-  /** Zhihu: article HTML whose images use `qp-asset://<assetId>`. */
+  /** Zhihu / Weibo article: article HTML whose images use `qp-asset://<assetId>`. */
   html?: string;
-  /** Xiaohongshu: plain body text, without the topics. */
+  /** Xiaohongshu / Weibo post: plain body text, without the topics. */
   text?: string;
   topics?: string[];
-  /** Asset id of the cover (X / Zhihu). */
+  /** Asset id of the cover (X / Zhihu / Weibo article). */
   cover?: string;
   /** Xiaohongshu: asset ids of the 3:4 cards, in order. */
   cards?: string[];
+  /** Weibo post: asset ids of the attached images, in order (≤9). */
+  images?: string[];
   summary?: string;
 }
 
